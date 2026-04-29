@@ -8,6 +8,8 @@ def read_json(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         return json.loads(f.read())
 
+def add_solution():
+    return None
 
 if __name__ == "__main__":
 
@@ -22,7 +24,8 @@ if __name__ == "__main__":
 
     mycursor = mydb.cursor()
 
-    mycursor.execute("SHOW TABLES")
+    #mycursor.execute("SHOW TABLES")
+    mycursor.execute("DESCRIBE solutions")
 
     for x in mycursor:
         print(x) 
