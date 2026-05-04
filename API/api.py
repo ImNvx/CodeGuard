@@ -3,10 +3,14 @@ import json
 from datetime import datetime
 from datasketch import MinHash, MinHashLSH
 import re
+from flask import Flask, request
 
 CONFIG_PATH = 'config.json'
 TABLE = 'solutions'
 ACCEPTED = '100'
+API_ROOT = ''
+
+app = Flask(__name__)
 
 def read_json(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -111,7 +115,6 @@ def get_similarity(solution_ids, threshold=0.5, k = 2):#sa ma joc cu k
         else:
             solutions.append('')
 
-    print(solution_ids, end='!\n')
 
     n = len(solutions)
 
@@ -161,6 +164,24 @@ def check_homework(users, problems):
     return table
 
 
+
+@app.route(API_ROOT + '/check_similarity', methods=['POST'])
+def check_similarity_api():
+    if request.method == 'POST':
+        data = request.json 
+        return get_similarity(data), 200
+    else:
+        return 'Method Not Allowed', 405
+
+@app.route(API_ROOT + '/check_homework', methods=['POST'])
+def check_homework_api():
+    if request.method == 'POST':
+        data = request.json 
+        return check_homework(data['users'], data['problems']), 200
+    else:
+        return 'Method Not Allowed', 405
+
+
 if __name__ == "__main__":
     #add_solution(9, "eric.mester", "/problems/1", "100", "1600521959766", None, "#include <iostream>\nusing namespace std;\nint main()\n{\n    int a, b;\n    cin >> a >> b;\n    cout << a + b << endl;\n}")
     #add_solution(5, "AlexVasiluta", "/problems/3", "100", "1600595318080", None ,"#include <bits/stdc++.h>\n#define DAU  ios::sync_with_stdio(false); fin.tie(0); fout.tie(0);\n#define PLEC fin.close(); fout.close(); exit(0);\nusing namespace std;\nusing VI  = vector<int>;\nusing PII = pair<int, int>;\nusing VP  = vector<PII>;\nusing VVP = vector<VP>;\nconst string task(\"chromosome\");\nifstream fin(task + \".in\");\nofstream fout(task + \".out\");\nint ind1, ind2;\nclass Path {\npublic:\n    Path() {}\n    Path(const int& _w, const vector<int>& _path)\n        : w(_w), path(_path) {}\n    inline bool operator > (const Path& P) const {\n        if (w != P.w)\n            return w > P.w;\n        ind1 = static_cast<int>(path.size());\n        ind2 = static_cast<int>(P.path.size());\n        while (ind1 > 0 && ind2 > 0) {\n            --ind1, --ind2;\n            if (path[ind1] != P.path[ind2])\n                return path[ind1] > P.path[ind2];\n        }\n        return path.size() > P.path.size();\n    }\n    inline bool operator < (const Path& P) const {\n        return P > *this;\n    }\n    inline void Tie(int& _w, vector<int>& _path) const {\n        _w = w, _path = path;\n    }\nprivate:\n    int w;\n    vector<int> path;\n};\nvector<Path> res;\nVVP g;\nVI path, fq;\npriority_queue<Path, vector<Path>, greater<Path>> q;\nint n, m, k, x, y, z, t, w, last;\nint main() {\n    DAU\n    fin >> n >> m >> k >> x >> y;\n    g = VVP(n + 1);\n    while (m--) {\n        fin >> z >> t >> w;\n        g[z].emplace_back(t, w);\n    }\n    fq = VI(n + 1);\n    path.emplace_back(x);\n    q.emplace(0, path);\n    while (!q.empty() && fq[y] < k) {\n        q.top().Tie(w, path);\n        q.pop();\n        last = path.back();\n        if (last == y)\n            res.emplace_back(w, path);\n        ++fq[last];\n        if (fq[last] <= k)\n            for (const PII& P : g[last])\n                if (find(path.begin(), path.end(), P.first) == path.end()) {\n                    path.emplace_back(P.first);\n                    q.emplace(w + P.second, path);\n                    path.pop_back();\n                }\n    }\n    sort(res.begin(), res.end());\n    fout << res.size() << '\\n';\n    for (const Path& P : res) {\n        P.Tie(w, path);\n        fout << w << ' ' << path.size() << '\\n';\n        for (const int& x : path)\n            fout << x << ' ';\n        fout << '\\n';\n    }\n    PLEC\n}")
@@ -168,5 +189,6 @@ if __name__ == "__main__":
     #print(get_code(9))
     #print(get_code(-1))
     #print(get_similarity([9,8]))
-    print(check_homework(['eric.mester', 'AlexVasiluta', 'TREYWAY', 'atodo'], ['/problems/1', '/problems/3']))
+    #print(check_homework(['eric.mester', 'AlexVasiluta', 'TREYWAY', 'atodo'], ['/problems/1', '/problems/3']))
+    app.run(debug=True)
     exit()
