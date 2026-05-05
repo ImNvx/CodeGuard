@@ -1,6 +1,6 @@
 import torch
 from transformers import AutoTokenizer
-from CodeGuard_Network import CodeGuardEncoder
+from .CodeGuard_Network import CodeGuardEncoder
 import torch.nn.functional as F
 
 class CodeGuard(): # am facut clasa pana la urma ca daca era functie simpla trebuia sa dai load la model de mai multe ori si e mai elegant asa
