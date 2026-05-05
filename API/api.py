@@ -6,7 +6,7 @@ import re
 from flask import Flask, request
 from AI.CodeGuard_AI import CodeGuard
 
-CONFIG_PATH = 'config.json'
+CONFIG_PATH = 'API/config.json'
 TABLE = 'solutions'
 ACCEPTED = '100'
 API_ROOT = ''
@@ -83,6 +83,41 @@ def get_code(solution_id):
         mydb.close()
 
         return myresult[0][0]
+    except Exception as e:
+        print(e)
+        return None
+
+def get_weird_percent(solution_id):
+    try:
+        sql = "SELECT weird_percent FROM " + TABLE +" WHERE solution_id = %s" #luam dupa id
+        val = (solution_id,)
+
+        mydb = connect_mysql()
+        mycursor = mydb.cursor()
+
+        mycursor.execute(sql, val)
+
+        myresult = mycursor.fetchall()
+
+        mydb.close()
+
+        return myresult[0][0]
+    except Exception as e:
+        return None
+
+def update_weird_percent(solution_id, weird_percent):
+    try:
+        sql = 'UPDATE ' + TABLE + ' SET weird_percent = %s WHERE solution_id = %s'
+        val = (weird_percent, solution_id)
+
+        mydb = connect_mysql()
+        mycursor = mydb.cursor()
+
+        mycursor.execute(sql, val)
+        mydb.commit()
+
+        mydb.close()
+        return weird_percent
     except Exception as e:
         return None
 
@@ -187,11 +222,53 @@ def check_homework_api():
     else:
         return 'Method Not Allowed', 405
 
-@app.route(API_ROOT + '/check_user', methods=['POST'])
-def check_weird_api():
+@app.route(API_ROOT + '/submit_and_check', methods=['POST'])
+def submit_and_check_api():
     if request.method == 'POST':
         data = request.json
-        return guard.checkSubmission(data['previous_submissions'], data['current_submission'])
+        previous_submissions_text = []
+        for id in data['previous_submissions']:
+            previous_submissions_text.append(get_code(id))
+            #print(id)
+        #print(previous_submissions_text)
+        #return "1"
+        #def add_solution(solution_id, user_id, problem_id, score, timestamp, weird_percent, text): #timestamp trb UNIX
+        weird_percent = guard.checkSubmission(previous_submissions_text, data['current_submission']['text'])
+        add_solution(int(data['current_submission']['solution_id']),
+                     data['current_submission']['user_id'],
+                     data['current_submission']['problem_id'],
+                     data['current_submission']['score'],
+                     data['current_submission']['timestamp'],
+                     weird_percent,
+                     data['current_submission']['text'])
+        return str(weird_percent)
+    else:
+        return 'Method Not Allowed', 405
+
+@app.route(API_ROOT + '/get_weird_percent', methods=['POST'])
+def get_weird_percent_api():
+    if request.method == 'POST':
+        data = request.json
+        weird_percent = get_weird_percent(data['solution_id'])
+        return str(weird_percent)
+    else:
+        return 'Method Not Allowed', 405
+
+@app.route(API_ROOT + '/recheck_weird_percent', methods=['POST'])
+def recheck_weird_percent_api():
+    if request.method == 'POST':
+        data = request.json
+        previous_submissions_text = []
+
+        for id in data['previous_submissions']:
+            previous_submissions_text.append(get_code(id))
+        current_submission_text = get_code(data['current_submission'])
+
+        weird_percent = guard.checkSubmission(previous_submissions_text, current_submission_text)
+
+        weird_percent = update_weird_percent(data['current_submission'], weird_percent)
+
+        return str(weird_percent)
     else:
         return 'Method Not Allowed', 405
 
