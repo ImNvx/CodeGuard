@@ -5,9 +5,9 @@ import torch.nn.functional as F
 
 class CodeGuard(): # am facut clasa pana la urma ca daca era functie simpla trebuia sa dai load la model de mai multe ori si e mai elegant asa
     def __init__(self):
-        self.tokenizer = AutoTokenizer.from_pretrained("CodeGuard_tokenizer")
+        self.tokenizer = AutoTokenizer.from_pretrained("AI/CodeGuard_tokenizer")
         self.model = CodeGuardEncoder(vocab_size=self.tokenizer.vocab_size)
-        self.model.load_state_dict(torch.load("CodeGuard.pth"), map_location=torch.device('cpu'))
+        self.model.load_state_dict(torch.load("AI/CodeGuard.pth"), map_location=torch.device('cpu'))
 
     def checkSubmission(self, previous_submissions, current_submission):
         with torch.no_grad():
