@@ -1,245 +1,113 @@
-import mysql.connector
-import json
-from datetime import datetime
-from datasketch import MinHash, MinHashLSH
-import re
 from flask import Flask, request
 from AI.CodeGuard_AI import CodeGuard
+from API.CodeGuard_Similarity import *
+from API.CodeGuard_Database import *
 
 CONFIG_PATH = 'API/config.json'
-TABLE = 'solutions'
-ACCEPTED = '100'
-API_ROOT = ''
+TABLE = 'solutions'     #tabelul in care CodeGuard va memora solutiile si datele despre ele
+ACCEPTED = '100'        #ce inseamna o solutie acceptata
+API_ROOT = ''       #prefixul pentru api
+API_PORT = 5000         #portul pe care va rula api-ul
+
+'''
+example API/config.json:
+{
+    "mysql-host" : "127.0.0.1",
+    "mysql-user" : "myuser",
+    "mysql-pass" : "mypass",
+    "mysql-database" : "mydb"
+}
+'''
 
 app = Flask(__name__)
 
-guard = CodeGuard()
-
-###poate le pun pe functiile astea intr o alta fila
-
-def read_json(file_path):
-    with open(file_path, 'r', encoding='utf-8') as f:
-        return json.loads(f.read())
-
-def clean_code(code: str):
-    code = re.sub(r"//.*", " ", code)
-    code = re.sub(r"/\*.*?\*/", " ", code, flags=re.S)
-    code = re.sub(r"\s+", "", code)  # REMOVE ALL whitespace
-    return code
-
-
-def char_shingles(text: str, k: int = 5):
-    # character k-grams
-    return {text[i:i+k] for i in range(max(0, len(text) - k + 1))}
-
-def get_minhash(shingles, num_perm=128):
-    m = MinHash(num_perm=num_perm)
-    for s in shingles:
-        m.update(s.encode("utf8"))
-    return m
-
-def connect_mysql():
-    db_login = read_json(CONFIG_PATH)
-
-    mydb = mysql.connector.connect(
-        host = db_login['mysql-host'],
-        user = db_login['mysql-user'],
-        password = db_login['mysql-pass'],
-        database = db_login['mysql-database']
-    )
-
-    return mydb
-
-def add_solution(solution_id, user_id, problem_id, score, timestamp, weird_percent, text): #timestamp trb UNIX
-    try:#           int     , string , string    ,string, string   , float / None, string
-        sql_timestamp = datetime.fromtimestamp(int(timestamp) / 1000) #transformam timpu in sql
-        sql = "INSERT INTO " + TABLE + " (solution_id, user_id, problem_id, score, timestamp, weird_percent, text) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-        val = (solution_id, user_id, problem_id, score, sql_timestamp, weird_percent, text)
-
-        mydb = connect_mysql()
-        mycursor = mydb.cursor()
-
-        mycursor.execute(sql, val)
-        mydb.commit()
-
-        mydb.close()
-        return True
-    except Exception as e:
-        print(e)
-        return False
-
-def get_code(solution_id):
-    try:
-        sql = "SELECT text FROM " + TABLE +" WHERE solution_id = %s" #luam dupa id
-        val = (solution_id,)
-
-        mydb = connect_mysql()
-        mycursor = mydb.cursor()
-
-        mycursor.execute(sql, val)
-
-        myresult = mycursor.fetchall()
-
-        mydb.close()
-
-        return myresult[0][0]
-    except Exception as e:
-        print(e)
-        return None
-
-def get_weird_percent(solution_id):
-    try:
-        sql = "SELECT weird_percent FROM " + TABLE +" WHERE solution_id = %s" #luam dupa id
-        val = (solution_id,)
-
-        mydb = connect_mysql()
-        mycursor = mydb.cursor()
-
-        mycursor.execute(sql, val)
-
-        myresult = mycursor.fetchall()
-
-        mydb.close()
-
-        return myresult[0][0]
-    except Exception as e:
-        return None
-
-def update_weird_percent(solution_id, weird_percent):
-    try:
-        sql = 'UPDATE ' + TABLE + ' SET weird_percent = %s WHERE solution_id = %s'
-        val = (weird_percent, solution_id)
-
-        mydb = connect_mysql()
-        mycursor = mydb.cursor()
-
-        mycursor.execute(sql, val)
-        mydb.commit()
-
-        mydb.close()
-        return weird_percent
-    except Exception as e:
-        return None
-
-def get_latest(user, problem_id, score):
-    try:# ultima solutie cu scorul score de la useru user la problema problem_id
-        sql = "SELECT solution_id FROM " + TABLE + " WHERE user_id = %s AND problem_id = %s AND score = %s ORDER BY timestamp DESC LIMIT 1"
-        val = (user, problem_id, score)
-
-        mydb = connect_mysql()
-        mycursor = mydb.cursor()
-
-        mycursor.execute(sql, val)
-
-        myresult = mycursor.fetchall()
-
-        mydb.close()
-
-        return myresult[0][0]
-    except Exception as e:
-        #print(e)
-        return None
-
-
-def get_similarity(solution_ids, threshold=0.5, k = 2):#sa ma joc cu k
-    """
-    Returns: list where result[i] = max similarity of solution i with any other solution
-    -1 => nu am gasit submisie acceptata
-    """
-    solutions =[]
-
-    for id in solution_ids:
-        solution = get_code(id)
-        if(solution != None):
-            solutions.append(solution)
-        else:
-            solutions.append('')
-
-
-    n = len(solutions)
-
-    lsh = MinHashLSH(threshold=threshold, num_perm=128)
-    minhashes = []
-
-    for i, code in enumerate(solutions):
-        code = clean_code(code)
-        shingles = char_shingles(code, k=k)
-
-        m = get_minhash(shingles)
-        minhashes.append(m)
-
-        lsh.insert(str(i), m)
-
-    max_sim = [0.0] * n
-
-    for i in range(n):
-        candidates = lsh.query(minhashes[i])
-
-        for c in candidates:
-            j = int(c)
-            if i == j:
-                continue
-
-            sim = minhashes[i].jaccard(minhashes[j])
-            max_sim[i] = max(max_sim[i], sim)
-
-    for i in range(n):
-        if(solutions[i] == ''):
-            max_sim[i] = -1
-    
-    return max_sim 
+guard = CodeGuard() # initalizam AI-ul
+database = CodeGuard_Database(TABLE = TABLE , ACCEPTED = ACCEPTED , CONFIG_PATH = CONFIG_PATH)
 
 def check_homework(users, problems):
-    table = []
+    table = [] # creem tabelul in care table[i][j] = nivelul maxim de similaritate al solutiei copilului j la problema i
     for problem in problems:
-        ids = []
+        solutions = [] 
         for user in users:
-            id = get_latest(user, problem, ACCEPTED)
+            id = database.get_latest(user, problem, ACCEPTED) #gasim idul ultimei solutii corecte
             if(id == None):
                 id = 0
-            ids.append(id)
-        
-        current = get_similarity(ids)
+            solution = database.get_code(id) #apoi ii luam codul
+            if solution == None:
+                solution = ''
+            
+            solutions.append(solution) #si o aduagam in lista
+
+        current = get_similarity(solutions) #verificam similaritatea pe problema curenta
         table.append(current)
     return table
-
-###poate le pun pe functiile astea intr o alta fila
 
 
 @app.route(API_ROOT + '/check_similarity', methods=['POST'])
 def check_similarity_api():
+    '''
+    json pentru /check_similarity:
+    {'solution_ids' : [id1, id2, id3, ...]}
+    '''
     if request.method == 'POST':
         data = request.json 
-        return get_similarity(data), 200
+        solution_ids = data['solution_ids']
+        solutions = []
+
+        for id in solution_ids:         #convertim din id-uri in text
+            solution = database.get_code(id)
+            if(solution != None):
+                solutions.append(solution)
+            else:
+                solutions.append('')
+        
+        return get_similarity(solutions), 200 #returnam similaritatea
     else:
         return 'Method Not Allowed', 405
 
 @app.route(API_ROOT + '/check_homework', methods=['POST'])
 def check_homework_api():
+    '''
+    json pentru /check_homework:
+    {
+     'user_ids' : [user_id1, user_id2, user_id3, ...],
+     'problem_ids' : [problem_id1, problem_id2, problem_id3, ...]
+    }
+    '''
     if request.method == 'POST':
         data = request.json 
-        return check_homework(data['users'], data['problems']), 200
+        return check_homework(data['user_ids'], data['problem_ids']), 200
     else:
         return 'Method Not Allowed', 405
 
 @app.route(API_ROOT + '/submit_and_check', methods=['POST'])
 def submit_and_check_api():
+    '''
+    json pentru /submit_and_check:
+    {
+     'previous_submissions' : [solution_id1, solution_id2, solution_id3, ...],
+     'current_submission' : {
+            'solution_id' : (int),
+            'user_id' : (string),
+            'problem_id': (string),
+            'score': (string),
+            'text': (string)
+     }
+    }
+    '''
     if request.method == 'POST':
         data = request.json
         previous_submissions_text = []
         for id in data['previous_submissions']:
-            previous_submissions_text.append(get_code(id))
-            #print(id)
-        #print(previous_submissions_text)
-        #return "1"
-        #def add_solution(solution_id, user_id, problem_id, score, timestamp, weird_percent, text): #timestamp trb UNIX
-        weird_percent = guard.checkSubmission(previous_submissions_text, data['current_submission']['text'])
-        add_solution(int(data['current_submission']['solution_id']),
+            previous_submissions_text.append(database.get_code(id)) # ia codul de la fiecare solutie anterioara
+
+        weird_percent = 100 - guard.checkSubmission(previous_submissions_text, data['current_submission']['text']) # verifica solutia curenta
+        database.add_solution(int(data['current_submission']['solution_id']), # apoi o aduaga in baza de date
                      data['current_submission']['user_id'],
                      data['current_submission']['problem_id'],
                      data['current_submission']['score'],
                      data['current_submission']['timestamp'],
-                     weird_percent,
+                     weird_percent,                                     # cu "dubiosenia" verificata
                      data['current_submission']['text'])
         return str(weird_percent)
     else:
@@ -247,26 +115,37 @@ def submit_and_check_api():
 
 @app.route(API_ROOT + '/get_weird_percent', methods=['POST'])
 def get_weird_percent_api():
+    '''
+    json pentru /get_weird_percent:
+    {'solution_id': (int)}
+    '''
     if request.method == 'POST':
         data = request.json
-        weird_percent = get_weird_percent(data['solution_id'])
+        weird_percent = database.get_weird_percent(data['solution_id'])
         return str(weird_percent)
     else:
         return 'Method Not Allowed', 405
 
 @app.route(API_ROOT + '/recheck_weird_percent', methods=['POST'])
 def recheck_weird_percent_api():
+    '''
+    json pentru /get_weird_percent:
+    {
+     'previous_submissions' : [(int), (int), (int), ...],
+     'current_submission' : (int)
+    }
+    '''
     if request.method == 'POST':
         data = request.json
         previous_submissions_text = []
 
-        for id in data['previous_submissions']:
-            previous_submissions_text.append(get_code(id))
-        current_submission_text = get_code(data['current_submission'])
+        for id in data['previous_submissions']:#luam codul submisilor trecute
+            previous_submissions_text.append(database.get_code(id))
+        current_submission_text = database.get_code(data['current_submission']) # luam codul submisiei curente
 
-        weird_percent = guard.checkSubmission(previous_submissions_text, current_submission_text)
+        weird_percent = 100 - guard.checkSubmission(previous_submissions_text, current_submission_text) # ii calculam diferenta
 
-        weird_percent = update_weird_percent(data['current_submission'], weird_percent)
+        weird_percent = database.update_weird_percent(data['current_submission'], weird_percent) # si ii dam update in baza de date
 
         return str(weird_percent)
     else:
@@ -274,12 +153,5 @@ def recheck_weird_percent_api():
 
 
 if __name__ == "__main__":
-    #add_solution(9, "eric.mester", "/problems/1", "100", "1600521959766", None, "#include <iostream>\nusing namespace std;\nint main()\n{\n    int a, b;\n    cin >> a >> b;\n    cout << a + b << endl;\n}")
-    #add_solution(5, "AlexVasiluta", "/problems/3", "100", "1600595318080", None ,"#include <bits/stdc++.h>\n#define DAU  ios::sync_with_stdio(false); fin.tie(0); fout.tie(0);\n#define PLEC fin.close(); fout.close(); exit(0);\nusing namespace std;\nusing VI  = vector<int>;\nusing PII = pair<int, int>;\nusing VP  = vector<PII>;\nusing VVP = vector<VP>;\nconst string task(\"chromosome\");\nifstream fin(task + \".in\");\nofstream fout(task + \".out\");\nint ind1, ind2;\nclass Path {\npublic:\n    Path() {}\n    Path(const int& _w, const vector<int>& _path)\n        : w(_w), path(_path) {}\n    inline bool operator > (const Path& P) const {\n        if (w != P.w)\n            return w > P.w;\n        ind1 = static_cast<int>(path.size());\n        ind2 = static_cast<int>(P.path.size());\n        while (ind1 > 0 && ind2 > 0) {\n            --ind1, --ind2;\n            if (path[ind1] != P.path[ind2])\n                return path[ind1] > P.path[ind2];\n        }\n        return path.size() > P.path.size();\n    }\n    inline bool operator < (const Path& P) const {\n        return P > *this;\n    }\n    inline void Tie(int& _w, vector<int>& _path) const {\n        _w = w, _path = path;\n    }\nprivate:\n    int w;\n    vector<int> path;\n};\nvector<Path> res;\nVVP g;\nVI path, fq;\npriority_queue<Path, vector<Path>, greater<Path>> q;\nint n, m, k, x, y, z, t, w, last;\nint main() {\n    DAU\n    fin >> n >> m >> k >> x >> y;\n    g = VVP(n + 1);\n    while (m--) {\n        fin >> z >> t >> w;\n        g[z].emplace_back(t, w);\n    }\n    fq = VI(n + 1);\n    path.emplace_back(x);\n    q.emplace(0, path);\n    while (!q.empty() && fq[y] < k) {\n        q.top().Tie(w, path);\n        q.pop();\n        last = path.back();\n        if (last == y)\n            res.emplace_back(w, path);\n        ++fq[last];\n        if (fq[last] <= k)\n            for (const PII& P : g[last])\n                if (find(path.begin(), path.end(), P.first) == path.end()) {\n                    path.emplace_back(P.first);\n                    q.emplace(w + P.second, path);\n                    path.pop_back();\n                }\n    }\n    sort(res.begin(), res.end());\n    fout << res.size() << '\\n';\n    for (const Path& P : res) {\n        P.Tie(w, path);\n        fout << w << ' ' << path.size() << '\\n';\n        for (const int& x : path)\n            fout << x << ' ';\n        fout << '\\n';\n    }\n    PLEC\n}")
-    #add_solution(6 , "eric.mester", "/problems/3", "100", "1601108375386", None , "#include <bits/stdc++.h>\n\nusing namespace std;\nusing pi = pair<int, int>;\nusing pv = pair<int, vector<int>>;\n\nint main() {\n    ifstream cin(\"chromosome.in\");\n    ofstream cout(\"chromosome.out\");\n    int n, m, k, u, v, x, y, z;\n    cin >> n >> m >> k >> u >> v;\n    vector<vector<pi>> G(n + 1);\n    while (m--) {\n        cin >> x >> y >> z;\n        G[x].emplace_back(y, z);\n    }\n    vector<pv> ans;\n    vector<int> c(n + 1);\n    auto comp = [&](const pv& a, const pv& b) {return a.first > b.first; };\n    priority_queue<pv, vector<pv>, decltype(comp)> Q(comp);\n    Q.emplace(0, vector<int>{u});\n    while (!Q.empty() && c[v] < k) {\n        int cost, last;\n        vector<int> path;\n        tie(cost, path) = Q.top(), Q.pop();\n        last = path.back();\n        ++c[last];\n        if (last == v)\n            ans.emplace_back(cost, path);\n        if (c[last] <= k)\n            for (const auto& x : G[last])\n                if (find(path.begin(), path.end(), x.first) == path.end()) {\n                    path.emplace_back(x.first);\n                    Q.emplace(cost + x.second, path);\n                    path.pop_back();\n                }\n    }\n    sort(ans.begin(), ans.end(), [&](const pv& a, const pv& b) {\n        if (a.first != b.first)\n            return a.first < b.first;\n        auto it1 = a.second.rbegin(), it2 = b.second.rbegin();\n        for (; it1 != a.second.rend(), it2 != b.second.rend() && *it1 == *it2; ++it1, ++it2);\n        if (it1 == a.second.rend())\n            return false;\n        if (it2 == b.second.rend())\n            return true;\n        return(*it1 < *it2);\n        });\n    cout << ans.size() << '\\n';\n    for (const auto& x : ans) {\n        cout << x.first << ' ' << x.second.size() << '\\n';\n        for (const auto& y : x.second)\n            cout << y << ' ';\n        cout << '\\n';\n    }\n} ")
-    #print(get_code(9))
-    #print(get_code(-1))
-    #print(get_similarity([9,8]))
-    #print(check_homework(['eric.mester', 'AlexVasiluta', 'TREYWAY', 'atodo'], ['/problems/1', '/problems/3']))
-    app.run(debug=True)
+    app.run(port = API_PORT)
     exit()
