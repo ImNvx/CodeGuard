@@ -4,6 +4,7 @@ from datetime import datetime
 from datasketch import MinHash, MinHashLSH
 import re
 from flask import Flask, request
+from AI.CodeGuard_AI import CodeGuard
 
 CONFIG_PATH = 'config.json'
 TABLE = 'solutions'
@@ -11,6 +12,10 @@ ACCEPTED = '100'
 API_ROOT = ''
 
 app = Flask(__name__)
+
+guard = CodeGuard()
+
+###poate le pun pe functiile astea intr o alta fila
 
 def read_json(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -163,6 +168,7 @@ def check_homework(users, problems):
         table.append(current)
     return table
 
+###poate le pun pe functiile astea intr o alta fila
 
 
 @app.route(API_ROOT + '/check_similarity', methods=['POST'])
@@ -178,6 +184,14 @@ def check_homework_api():
     if request.method == 'POST':
         data = request.json 
         return check_homework(data['users'], data['problems']), 200
+    else:
+        return 'Method Not Allowed', 405
+
+@app.route(API_ROOT + '/check_user', methods=['POST'])
+def check_weird_api():
+    if request.method == 'POST':
+        data = request.json
+        return guard.checkSubmission(data['previous_submissions'], data['current_submission'])
     else:
         return 'Method Not Allowed', 405
 
