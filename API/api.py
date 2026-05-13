@@ -101,7 +101,9 @@ def submit_and_check_api():
         for id in data['previous_submissions']:
             previous_submissions_text.append(database.get_code(id)) # ia codul de la fiecare solutie anterioara
 
-        weird_percent = 100 - guard.checkSubmission(previous_submissions_text, data['current_submission']['text']) # verifica solutia curenta
+        weird_percent = 0
+        if(len(previous_submissions_text) != 0):
+            weird_percent = 100 - guard.checkSubmission(previous_submissions_text, data['current_submission']['text']) # verifica solutia curenta
         database.add_solution(int(data['current_submission']['solution_id']), # apoi o aduaga in baza de date
                      data['current_submission']['user_id'],
                      data['current_submission']['problem_id'],
@@ -153,5 +155,5 @@ def recheck_weird_percent_api():
 
 
 if __name__ == "__main__":
-    app.run(port = API_PORT)
+    app.run(port = API_PORT, debug= True)
     exit()
