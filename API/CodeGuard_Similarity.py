@@ -1,60 +1,79 @@
-from API.CodeGuard_Database import *
-from datasketch import MinHash, MinHashLSH
 import re
+from collections import Counter
 
-def clean_code(code: str):
-    code = re.sub(r"//.*", " ", code)
+def clean_code(code: str) -> str:
+    code = re.sub(r"//.*?$", " ", code, flags=re.M)
     code = re.sub(r"/\*.*?\*/", " ", code, flags=re.S)
-    code = re.sub(r"\s+", "", code)  # REMOVE ALL whitespace
+    code = re.sub(r"#.*?$", " ", code, flags=re.M)
     return code
 
 
-def char_shingles(text: str, k: int = 5):
-    # character k-grams
-    return {text[i:i+k] for i in range(max(0, len(text) - k + 1))}
-
-def get_minhash(shingles, num_perm=128):
-    m = MinHash(num_perm=num_perm)
-    for s in shingles:
-        m.update(s.encode("utf8"))
-    return m
-
-def get_similarity(solutions, threshold=0.5, k = 2):#sa ma joc cu k
+def normalize_tokens(code: str):
     """
-    Returns: list where result[i] = max similarity of solution i with any other solution
-    -1 => nu am gasit submisie acceptata
+    Replace identifiers with VAR to preserve structure
     """
+    tokens = re.findall(r"[A-Za-z_]\w*|\d+|[^\s]", code)
+
+    normalized = []
+    for t in tokens:
+        if re.match(r"[A-Za-z_]\w*", t) and t not in {
+            "for", "while", "if", "else", "return",
+            "def", "class", "in", "range", "True", "False"
+        }:
+            normalized.append("VAR")
+        else:
+            normalized.append(t)
+
+    return normalized
+
+
+def shingles(tokens, k=3):
+    if len(tokens) < k:
+        return {" ".join(tokens)}
+    return {
+        " ".join(tokens[i:i+k])
+        for i in range(len(tokens) - k + 1)
+    }
+
+
+def jaccard(a, b):
+    if not a and not b:
+        return 1.0
+    return len(a & b) / len(a | b)
+
+
+def preprocess(code, k=3):
+    code = clean_code(code)
+    tokens = normalize_tokens(code)
+    return shingles(tokens, k)
+
+
+def get_similarity(solutions, k=3):
     n = len(solutions)
 
-    lsh = MinHashLSH(threshold=threshold, num_perm=128)
-    minhashes = []
-
-    for i, code in enumerate(solutions):
-        code = clean_code(code)
-        shingles = char_shingles(code, k=k)
-
-        m = get_minhash(shingles)
-        minhashes.append(m)
-
-        lsh.insert(str(i), m)
+    processed = []
+    for code in solutions:
+        if not code:
+            processed.append(set())
+        else:
+            processed.append(preprocess(code, k))
 
     max_sim = [0.0] * n
 
     for i in range(n):
-        candidates = lsh.query(minhashes[i])
+        for j in range(i + 1, n):
+            sim = jaccard(processed[i], processed[j])
 
-        for c in candidates:
-            j = int(c)
-            if i == j:
-                continue
+            # boost small similarities slightly (important fix)
+            sim = sim ** 0.7   # nonlinear scaling
 
-            sim = minhashes[i].jaccard(minhashes[j])
             max_sim[i] = max(max_sim[i], sim)
+            max_sim[j] = max(max_sim[j], sim)
 
     for i in range(n):
-        if(solutions[i] == ''):
+        if not solutions[i]:
             max_sim[i] = -1
         else:
-            max_sim[i] = max_sim[i] * 100
-    
-    return max_sim 
+            max_sim[i] *= 100
+
+    return max_sim
