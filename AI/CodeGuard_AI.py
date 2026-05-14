@@ -7,7 +7,7 @@ class CodeGuard(): # am facut clasa pana la urma ca daca era functie simpla treb
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("AI/CodeGuard_tokenizer")
         self.model = CodeGuardHybrid(vocab_size=self.tokenizer.vocab_size)
-        self.model.load_state_dict(torch.load("AI/CodeGuard_encoder_v1.pth", map_location=torch.device('cpu')))
+        self.model.load_state_dict(torch.load("AI/CodeGuard_encoder_v2.pth", map_location=torch.device('cpu')))
         self.model.eval()
 
     def checkSubmission(self, previous_submissions, current_submission):
@@ -26,4 +26,4 @@ class CodeGuard(): # am facut clasa pana la urma ca daca era functie simpla treb
             current_embedding = self.model(current_encoded['input_ids'], current_encoded['attention_mask'], current_style)
             
             similarity = F.cosine_similarity(centroid_vector, current_embedding).item()
-            return ((similarity + 1.0) / 2.0) * 100 # calculez media aritmetica si apoi o transform in procent, valoarea similarity e intre [-1, 1]
+            return max(0.0, (similarity - 0.2) / 0.8) * 100 # mapez intervalul [0.2, 1] pe [0, 100]; (0.2 = loss margin)

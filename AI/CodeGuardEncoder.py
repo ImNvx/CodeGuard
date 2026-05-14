@@ -55,6 +55,13 @@ def getFeatures(code):
         tab_lines = sum(1 for l in indented_lines if l.startswith('\t'))
         features.append(tab_lines / len(indented_lines))
         
+    # comentarii
+    single_line_comments = len(re.findall(r'//', code))
+    multi_line_comments = len(re.findall(r'/\*', code))
+    total_comments = single_line_comments + multi_line_comments
+    total_lines = len(lines) if len(lines) > 0 else 1
+    features.append(total_comments / total_lines)
+        
     return features
 
 
@@ -87,10 +94,12 @@ class CodeGuardHybrid(nn.Module):
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
         
         self.style_mlp = nn.Sequential(
-            nn.Linear(9, 32), # 9 feature-uri momentan
+            nn.Linear(10, 32), # 10 feature-uri, am adaugat partea de comments
             nn.ReLU(),
             nn.Dropout(0.1)
         )
+        
+        self.batch_norm = nn.BatchNorm1d(embed_dim + 32)
         
         self.fc = nn.Linear(embed_dim + 32, output_dim)
 
@@ -112,6 +121,7 @@ class CodeGuardHybrid(nn.Module):
         
         # partea de concatenare pt hybrid
         fused = torch.cat((mean_pooled, style_encoded), dim=1)
+        fused = self.batch_norm(fused)
         fingerprint = self.fc(fused)
         
         return F.normalize(fingerprint, p=2, dim=1)
@@ -126,15 +136,15 @@ if __name__ == "__main__":
 
     #num_workers = min(4, os.cpu_count() or 1)
     num_workers = 12
-    dataloader_train = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=True) 
+    dataloader_train = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=True, drop_last=True)
 
     model = CodeGuardHybrid(vocab_size=tokenizer.vocab_size)
     model = model.to(device)
     
-    criterion = nn.CosineEmbeddingLoss(margin=0.2)
+    criterion = nn.CosineEmbeddingLoss(margin=0.2) #ultima speranta ramane sa cresc margin-ul ):
     optimizer = optim.AdamW(model.parameters(), lr=5e-4, weight_decay=1e-4)
     
-    n_epochs = 50
+    n_epochs = 100
     total_steps = len(dataloader_train) * n_epochs
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_steps, eta_min=1e-6) # scheduler de LR pentru fine-tuning catre ultimile epoci
     
@@ -177,4 +187,5 @@ if __name__ == "__main__":
         epoch_loss = running_loss / len(dataloader_train)
         print(f"Epoch {epoch + 1}, Average Loss: {epoch_loss:.4f}")
 
-    torch.save(model.state_dict(), "CodeGuard_encoder_v1.pth")
+    torch.save(model.state_dict(), "CodeGuard_encoder_v2.pth")
+    print("Gata training")
