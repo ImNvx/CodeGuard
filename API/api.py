@@ -91,6 +91,7 @@ def submit_and_check_api():
             'user_id' : (string),
             'problem_id': (string),
             'score': (string),
+            'timestamp': (string),
             'text': (string)
      }
     }

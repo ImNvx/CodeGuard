@@ -19,6 +19,16 @@ def read_json(file_path):
 
 DB_CONFIG = read_json('POC/config.json')
 
+'''
+example POC/config.json:
+{
+    "mysql-host" : "127.0.0.1",
+    "mysql-user" : "myuser",
+    "mysql-pass" : "mypass",
+    "mysql-database" : "mydb"
+}
+'''
+
 @app.route(POC_ROOT + '/', methods=['GET'])
 def proof_of_concept_main():
     if request.method == 'GET':
