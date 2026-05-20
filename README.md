@@ -26,8 +26,8 @@ Proiectul este scris în limbajul de programare **Python**.
 * **Flask** - pentru a rula endpointurile web
 * **MySQL** - pentru baza de date
 
-### Calculul similaritatii (Algoritimc)
-1. Codul se normalizaeza
+### Calculul similaritatii (Algoritmic)
+1. Codul se normalizeaza
     * variabilele sunt inlocuite cu `VAR`
     * comentariile sunt eliminate
 2. Shingling
