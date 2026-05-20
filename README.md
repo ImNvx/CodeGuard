@@ -36,14 +36,42 @@ Proiectul este scris în limbajul de programare **Python**.
     * se calculeaza similaritatea Jaccard intre cele doua seturi de shingles
     * similaritatea Jaccard este `J(A, B) = |A ∩ B| / |A ∪ B|`
 
-## Instalare (Librării Necesare)
-Dependințele necesare rulării proiectului pot fi instalate folosind `pip`:
+## Instalare (Librarii Necesare)
+Dependințele necesare rularii proiectului pot fi instalate folosind `pip`:
 
 ```bash
 pip install -r requirments.txt
 ```
 
+Un set de comenzi pentru a descarca proiectul si dependentele sale este urmatorul:
+```bash
+git clone https://github.com/ImNvx/CodeGuard.git
+cd CodeGuard
+pip install -r requirments.txt
+```
+
 Pachetele folosite includ: `mysql-connector-python`, `DateTime`, `regex`, `Flask`, `torch` și `transformers`.
+
+## Configuratie
+
+Fisier: `API/config.json`
+
+```json
+{
+  "mysql-host": "127.0.0.1",
+  "mysql-user": "myuser",
+  "mysql-pass": "mypass",
+  "mysql-database": "mydb"
+}
+```
+
+In fisierul `API/api.py` se mai pot configura urmatoarele
+```python
+TABLE = 'solutions'     #tabelul in care CodeGuard va memora solutiile si datele despre ele
+ACCEPTED = '100'        #ce inseamna o solutie acceptata
+API_ROOT = ''           #prefixul pentru api (ex: daca API_ROOT = 'api' pentru a accesa endpointul 'submit_and_check' adresa web va fi: http://example.com:5000/api/submit_and_check )
+API_PORT = 5000         #portul pe care va rula api-ul
+```
 
 ## Utilizare
 
