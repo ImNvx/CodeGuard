@@ -1,13 +1,18 @@
 import torch
+import os
 from transformers import AutoTokenizer
 from .CodeGuardEncoder import CodeGuardHybrid, getFeatures
 import torch.nn.functional as F
 
 class CodeGuard(): # am facut clasa pana la urma ca daca era functie simpla trebuia sa dai load la model de mai multe ori si e mai elegant asa
     def __init__(self):
-        self.tokenizer = AutoTokenizer.from_pretrained("AI/CodeGuard_tokenizer")
+        base_dir = os.path.dirname(__file__)
+        tokenizer_path = os.path.join(base_dir, "CodeGuard_tokenizer")
+        model_path = os.path.join(base_dir, "CodeGuard_encoder_v2.pth")
+        
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
         self.model = CodeGuardHybrid(vocab_size=self.tokenizer.vocab_size)
-        self.model.load_state_dict(torch.load("AI/CodeGuard_encoder_v2.pth", map_location=torch.device('cpu')))
+        self.model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
         self.model.eval()
 
     def checkSubmission(self, previous_submissions, current_submission):

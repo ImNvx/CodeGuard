@@ -500,7 +500,7 @@
             <div class="loader" id="loader"></div>
 
             <div class="result-box" id="resultBox">
-                <div class="result-title">Analiza de Plagiat CodeGuard</div>
+                <div class="result-title">Analiza de similaritate CodeGuard</div>
                 <div class="result-score" id="resultScore">0%</div>
                 <div class="result-message" id="resultMessage">Scorul de Similaritate</div>
             </div>
@@ -615,12 +615,12 @@
                 
                 resultScore.className = 'result-score';
                 if(weirdPercent > 70) {
-                    resultScore.classList.add('high');
+                    //resultScore.classList.add('high');
                     resultMessage.textContent = 'Similaritate ridicată detectată. Posibil plagiat.';
                 } else if(weirdPercent > 30) {
                     resultMessage.textContent = 'Similaritate moderată.';
                 } else {
-                    resultScore.classList.add('low');
+                    //resultScore.classList.add('low');
                     resultMessage.textContent = 'Similaritate scăzută. Pare autentic.';
                 }
 
