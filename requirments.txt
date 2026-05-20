@@ -1,0 +1,6 @@
+mysql-connector-python
+DateTime
+regex
+Flask
+torch
+transformers
