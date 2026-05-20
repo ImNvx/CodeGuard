@@ -5,4 +5,5 @@ venv
 scraper/*.json
 API/*.json
 POC/*.json
-delted/*
+deleted/*
+deleted
