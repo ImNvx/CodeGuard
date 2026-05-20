@@ -1,5 +1,4 @@
 import re
-from collections import Counter
 
 def clean_code(code: str) -> str:
     # sterge comentariile de tip //
