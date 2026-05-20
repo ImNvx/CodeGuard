@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGinfo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #060608;
+            --bg-panel: rgba(18, 18, 24, 0.7);
+            --bg-input: rgba(10, 10, 14, 0.8);
+            
+            --border-light: rgba(255, 255, 255, 0.08);
+            --border-focus: rgba(0, 240, 255, 0.4);
+            
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-tertiary: #64748b;
+            
+            --accent-blue: #00f0ff;
+            --accent-purple: #8b5cf6;
+            
+            --glow-blue: 0 0 20px rgba(0, 240, 255, 0.15);
+            --glow-purple: 0 0 20px rgba(139, 92, 246, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 240, 255, 0.04), transparent 30%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05), transparent 30%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(6, 6, 8, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand span {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--text-primary);
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 500px;
+            gap: 30px;
+            padding: 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .problem-header {
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 20px;
+        }
+
+        .problem-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .problem-meta {
+            display: flex;
+            gap: 20px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .meta-item strong {
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        .problem-body {
+            line-height: 1.7;
+            color: #d1d5db;
+        }
+
+        .problem-body h3 {
+            color: var(--text-primary);
+            margin: 25px 0 10px 0;
+            font-size: 18px;
+        }
+
+        .problem-body p {
+            margin-bottom: 15px;
+        }
+
+        .example-box {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .example-box-header {
+            background: rgba(255,255,255,0.03);
+            padding: 10px 15px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .example-box-content {
+            padding: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            color: #e2e8f0;
+        }
+
+        .submit-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .submit-header {
+            font-size: 20px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-control {
+            background: var(--bg-input);
+            border: 1px solid var(--border-light);
+            color: var(--text-primary);
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--border-focus);
+            box-shadow: var(--glow-blue);
+        }
+
+        textarea.form-control {
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        textarea.form-control.tall {
+            min-height: 250px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--accent-blue), #0077ff);
+            color: #000;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--glow-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 25px rgba(0, 240, 255, 0.3);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-light);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 10px;
+        }
+
+        .result-box.active {
+            display: flex;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .result-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .result-score {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(to right, #ffffff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .result-score.high {
+            background: linear-gradient(to right, #ff4d4d, #ff8080);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .result-score.low {
+            background: linear-gradient(to right, #4ade80, #86efac);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .result-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .loader {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(0, 240, 255, 0.3);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-expand {
+            background: none;
+            border: 1px solid var(--border-light);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-expand:hover {
+            color: var(--text-primary);
+            border-color: var(--accent-blue);
+        }
+
+        .code-modal {
+            display: none;
+            position: fixed;
+            top: 5vh;
+            left: 5vw;
+            width: 90vw;
+            height: 90vh;
+            z-index: 1000;
+            background: var(--bg-base);
+            border: 1px solid var(--accent-blue);
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .code-modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10,10,14,0.9);
+        }
+        
+        .modal-header span {
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        #modalTextarea {
+            flex: 1;
+            border: none;
+            border-radius: 0;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            resize: none;
+            background: rgba(10,10,14,0.6);
+            color: #e2e8f0;
+            outline: none;
+        }
+
+        #modalTextarea:focus {
+            box-shadow: inset var(--glow-blue);
+        }
+        
+        .expand-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .expand-backdrop.active {
+            display: block;
+        }
+
+        @media (max-width: 1100px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            CG<span>info</span> 
+            <span style="font-size: 12px; color: var(--text-tertiary); margin-left: 10px; background: none; -webkit-text-fill-color: var(--text-tertiary);"></span>
+        </div>
+        <div class="nav-links">
+            <a href="#" class="active">Probleme</a>
+            <a href="#">Trimite</a>
+            <a href="#">Clasament</a>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <div class="panel problem-panel">
+            <div class="problem-header">
+                <h1 class="problem-title">A. Pepene</h1>
+                <div class="problem-meta">
+                    <div class="meta-item">Limita de timp per test: <strong>1 secundă</strong></div>
+                    <div class="meta-item">Limita de memorie per test: <strong>64 megabytes</strong></div>
+                    <div class="meta-item">Intrare: <strong>standard input</strong></div>
+                    <div class="meta-item">Ieșire: <strong>standard output</strong></div>
+                </div>
+            </div>
+
+            <div class="problem-body">
+                <p>Într-o zi călduroasă de vară, Pete și prietenul său Billy au decis să cumpere un pepene. L-au ales pe cel mai mare și mai copt, în opinia lor. După aceea, pepenele a fost cântărit și cântarul a indicat <em>w</em> kilograme. S-au grăbit spre casă, murind de sete, și au decis să împartă fructul, însă au întâmpinat o problemă dificilă.</p>
+                <p>Pete și Billy sunt mari fani ai numerelor pare, de aceea vor să împartă pepenele în așa fel încât fiecare dintre cele două părți să cântărească un număr par de kilograme, dar nu este obligatoriu ca părțile să fie egale. Băieții sunt extrem de obosiți și vor să înceapă masa cât mai repede posibil, de aceea trebuie să-i ajuți și să afli dacă pot împărți pepenele în modul dorit. Cu siguranță, fiecare dintre ei ar trebui să primească o parte cu o greutate pozitivă.</p>
+                
+                <h3>Intrare</h3>
+                <p>Prima (și singura) linie de intrare conține numărul întreg <em>w</em> (1 ≤ <em>w</em> ≤ 100) — greutatea pepenelui cumpărat de băieți.</p>
+                
+                <h3>Ieșire</h3>
+                <p>Afișează DA, dacă băieții pot împărți pepenele în două părți, fiecare cântărind un număr par de kilograme; și NU în caz contrar.</p>
+                
+                <h3>Exemple</h3>
+                <div class="example-box">
+                    <div class="example-box-header">Intrare</div>
+                    <div class="example-box-content">8</div>
+                </div>
+                <div class="example-box">
+                    <div class="example-box-header">Ieșire</div>
+                    <div class="example-box-content">DA</div>
+                </div>
+                
+                <h3>Notă</h3>
+                <p>De exemplu, băieții pot împărți pepenele în două părți de 2 și respectiv 6 kilograme (altă variantă — două părți de 4 și 4 kilograme).</p>
+            </div>
+        </div>
+
+        <div class="panel submit-panel">
+            <div class="submit-header">
+                <span>Trimite Soluția</span>
+            </div>
+
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="prev_code" style="margin-bottom: 0;">Cod de Referință / Anterior (Pentru verificare)</label>
+                    <button type="button" class="btn-expand" onclick="toggleExpand('prev_code')">⛶ Extinde</button>
+                </div>
+                <textarea id="prev_code" class="form-control" placeholder="Lipește codul sursă de referință aici..."></textarea>
+            </div>
+
+            <div class="form-group" style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="code" style="margin-bottom: 0;">Noul Tău Cod Sursă</label>
+                    <button type="button" class="btn-expand" onclick="toggleExpand('code')">⛶ Extinde</button>
+                </div>
+                <textarea id="code" class="form-control tall" placeholder="Scrie soluția ta aici..."></textarea>
+            </div>
+
+            <button class="btn-submit" id="submitBtn">Trimite și Verifică Similaritatea</button>
+            <div class="loader" id="loader"></div>
+
+            <div class="result-box" id="resultBox">
+                <div class="result-title">Analiza de Plagiat CodeGuard</div>
+                <div class="result-score" id="resultScore">0%</div>
+                <div class="result-message" id="resultMessage">Scorul de Similaritate</div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="expand-backdrop" id="expandBackdrop" onclick="closeExpanded()"></div>
+    
+    <div id="codeModal" class="code-modal">
+        <div class="modal-header">
+            <span id="modalTitle">Extins</span>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-expand" onclick="zoomText(1)" title="Mărește textul">A+</button>
+                <button class="btn-expand" onclick="zoomText(-1)" title="Micșorează textul">A-</button>
+                <button class="btn-expand" onclick="closeExpanded()">Închide</button>
+            </div>
+        </div>
+        <textarea id="modalTextarea" class="form-control" spellcheck="false"></textarea>
+    </div>
+
+    <script>
+        let currentExpandedId = null;
+        let currentFontSize = 14;
+
+        function zoomText(direction) {
+            currentFontSize += (direction * 2);
+            if (currentFontSize < 10) currentFontSize = 10;
+            if (currentFontSize > 48) currentFontSize = 48;
+            document.getElementById('modalTextarea').style.fontSize = currentFontSize + 'px';
+        }
+
+        function toggleExpand(id) {
+            currentExpandedId = id;
+            const sourceEl = document.getElementById(id);
+            const modal = document.getElementById('codeModal');
+            const modalTa = document.getElementById('modalTextarea');
+            const backdrop = document.getElementById('expandBackdrop');
+            const title = document.getElementById('modalTitle');
+            
+            title.textContent = id === 'code' ? 'Noul Tău Cod Sursă' : 'Cod de Referință';
+            modalTa.value = sourceEl.value;
+            modalTa.style.fontSize = currentFontSize + 'px';
+            
+            modal.classList.add('active');
+            backdrop.classList.add('active');
+            modalTa.focus();
+        }
+        
+        function closeExpanded() {
+            if (currentExpandedId) {
+                const sourceEl = document.getElementById(currentExpandedId);
+                const modalTa = document.getElementById('modalTextarea');
+                sourceEl.value = modalTa.value;
+            }
+            document.getElementById('codeModal').classList.remove('active');
+            document.getElementById('expandBackdrop').classList.remove('active');
+            currentExpandedId = null;
+        }
+
+        document.getElementById('modalTextarea').addEventListener('input', function() {
+            if (currentExpandedId) {
+                document.getElementById(currentExpandedId).value = this.value;
+            }
+        });
+
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            const currentCodeText = document.getElementById('code').value;
+            const prevCodeText = document.getElementById('prev_code').value;
+            
+            if(!currentCodeText.trim()) {
+                alert("Te rugăm să introduci noul tău cod sursă.");
+                return;
+            }
+
+            let previousCodes = [];
+            if(prevCodeText.trim()) {
+                previousCodes.push(prevCodeText);
+            }
+
+            const btn = document.getElementById('submitBtn');
+            const loader = document.getElementById('loader');
+            const resultBox = document.getElementById('resultBox');
+            const resultScore = document.getElementById('resultScore');
+            const resultMessage = document.getElementById('resultMessage');
+
+            btn.style.display = 'none';
+            loader.style.display = 'block';
+            resultBox.classList.remove('active');
+
+            const payload = {
+                previous_code: previousCodes,
+                current_code: currentCodeText
+            };
+
+            try {
+                const response = await fetch('/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if(!response.ok) {
+                    throw new Error(`API returned ${response.status}`);
+                }
+
+                const weirdPercentText = await response.text();
+                const weirdPercent = parseFloat(weirdPercentText);
+                
+                resultScore.textContent = weirdPercent.toFixed(2) + '%';
+                
+                resultScore.className = 'result-score';
+                if(weirdPercent > 70) {
+                    resultScore.classList.add('high');
+                    resultMessage.textContent = 'Similaritate ridicată detectată. Posibil plagiat.';
+                } else if(weirdPercent > 30) {
+                    resultMessage.textContent = 'Similaritate moderată.';
+                } else {
+                    resultScore.classList.add('low');
+                    resultMessage.textContent = 'Similaritate scăzută. Pare autentic.';
+                }
+
+                resultBox.classList.add('active');
+
+            } catch (err) {
+                console.error(err);
+                resultScore.textContent = 'Error';
+                resultScore.className = 'result-score high';
+                resultMessage.textContent = err.message;
+                resultBox.classList.add('active');
+            } finally {
+                btn.style.display = 'block';
+                loader.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
