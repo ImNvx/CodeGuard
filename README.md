@@ -26,6 +26,15 @@ Proiectul este scris în limbajul de programare **Python**.
 * **Flask** - pentru a rula endpointurile web
 * **MySQL** - pentru baza de date
 
+### Calculul similaritatii (Algoritimc)
+1. Codul se normalizaeza
+    * variabilele sunt inlocuite cu `VAR`
+    * comentariile sunt eliminate
+2. Shingling
+    * codul este impartit in secvente de cate k token-uri, in cazul nostru k = 3
+3. Similaritate Jaccard
+    * se calculeaza similaritatea Jaccard intre cele doua seturi de shingles
+    * similaritatea Jaccard este `J(A, B) = |A ∩ B| / |A ∪ B|`
 
 ## Instalare (Librării Necesare)
 Dependințele necesare rulării proiectului pot fi instalate folosind `pip`:
