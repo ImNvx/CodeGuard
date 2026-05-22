@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CGinfo</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js"></script>
     <style>
         :root {
             --bg-base: #060608;
@@ -228,14 +232,41 @@
             box-shadow: var(--glow-blue);
         }
 
-        textarea.form-control {
+        .CodeMirror {
+            background: var(--bg-input);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
             font-family: 'JetBrains Mono', monospace;
-            min-height: 150px;
-            resize: vertical;
+            font-variant-ligatures: none !important;
+            font-feature-settings: "calt" 0, "liga" 0, "clig" 0, "dlig" 0 !important;
+            -webkit-font-feature-settings: "calt" 0, "liga" 0, "clig" 0, "dlig" 0 !important;
+            font-size: 14px;
+            height: 150px;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+        }
+        
+        .CodeMirror pre, .CodeMirror span {
+            font-variant-ligatures: none !important;
+            font-feature-settings: "calt" 0, "liga" 0, "clig" 0, "dlig" 0 !important;
+            -webkit-font-feature-settings: "calt" 0, "liga" 0, "clig" 0, "dlig" 0 !important;
+        }
+        
+        .cm-s-dracula .cm-meta {
+            color: var(--accent-purple) !important;
+        }
+        
+        .cm-s-dracula .cm-string {
+            color: #f1fa8c !important;
+        }
+        
+        .CodeMirror-focused {
+            border-color: var(--border-focus);
+            box-shadow: var(--glow-blue);
         }
 
-        textarea.form-control.tall {
-            min-height: 250px;
+        .tall + .CodeMirror {
+            height: 250px;
         }
 
         .btn-submit {
@@ -350,6 +381,53 @@
             border-color: var(--accent-blue);
         }
 
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid var(--border-light);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .tab-btn:hover:not(.active) {
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+        }
+        
+        .add-btn {
+            background: transparent;
+            border: 1px dashed var(--border-light);
+            color: var(--text-secondary);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .add-btn:hover {
+            border-color: var(--accent-purple);
+            color: var(--accent-purple);
+            background: rgba(139, 92, 246, 0.05);
+        }
+
         .code-modal {
             display: none;
             position: fixed;
@@ -385,19 +463,16 @@
             color: var(--accent-blue);
         }
 
-        #modalTextarea {
+        #codeModal .CodeMirror {
             flex: 1;
             border: none;
             border-radius: 0;
-            padding: 20px;
-            font-family: 'JetBrains Mono', monospace;
-            resize: none;
+            padding: 10px;
             background: rgba(10,10,14,0.6);
-            color: #e2e8f0;
-            outline: none;
+            height: 100%;
         }
-
-        #modalTextarea:focus {
+        
+        #codeModal .CodeMirror-focused {
             box-shadow: inset var(--glow-blue);
         }
         
@@ -478,20 +553,28 @@
         <div class="panel submit-panel">
             <div class="submit-header">
                 <span>Trimite Soluția</span>
-            </div>
-
-            <div class="form-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <label for="prev_code" style="margin-bottom: 0;">Cod de Referință / Anterior (Pentru verificare)</label>
-                    <button type="button" class="btn-expand" onclick="toggleExpand('prev_code')">⛶ Extinde</button>
+                <div class="tabs-container">
+                    <button class="tab-btn active" id="tabAI" onclick="selectTab('AI')">CodeGuard AI</button>
+                    <button class="tab-btn" id="tabSim" onclick="selectTab('Similarity')">Similarity</button>
                 </div>
-                <textarea id="prev_code" class="form-control" placeholder="Lipește codul sursă de referință aici..."></textarea>
             </div>
 
-            <div class="form-group" style="flex: 1;">
+            <div id="prevSolutionsContainer">
+                <div class="form-group prev-sol-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label style="margin-bottom: 0;">Cod de Referință / Anterior (Pentru verificare)</label>
+                        <button type="button" class="btn-expand" onclick="toggleExpand(this)">⛶ Extinde</button>
+                    </div>
+                    <textarea class="form-control prev-code-textarea" placeholder="Lipește codul sursă de referință aici..."></textarea>
+                </div>
+            </div>
+            
+            <button type="button" class="add-btn" id="addPrevBtn" onclick="addPrevSolution()" style="display: block;">+ Adaugă încă un cod anterior</button>
+
+            <div class="form-group" style="flex: 1; margin-top: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <label for="code" style="margin-bottom: 0;">Noul Tău Cod Sursă</label>
-                    <button type="button" class="btn-expand" onclick="toggleExpand('code')">⛶ Extinde</button>
+                    <button type="button" class="btn-expand" onclick="toggleExpand(this, true)">⛶ Extinde</button>
                 </div>
                 <textarea id="code" class="form-control tall" placeholder="Scrie soluția ta aici..."></textarea>
             </div>
@@ -524,62 +607,134 @@
     </div>
 
     <script>
-        let currentExpandedId = null;
+        const cmOptions = {
+            mode: "text/x-c++src",
+            theme: "dracula",
+            lineNumbers: true,
+            matchBrackets: true,
+            indentUnit: 4
+        };
+
+        const mainCodeCM = CodeMirror.fromTextArea(document.getElementById('code'), cmOptions);
+        let prevCodeCMs = [];
+        prevCodeCMs.push(CodeMirror.fromTextArea(document.querySelector('.prev-code-textarea'), cmOptions));
+        
+        const modalCM = CodeMirror.fromTextArea(document.getElementById('modalTextarea'), cmOptions);
+
+        let currentExpandedCM = null;
         let currentFontSize = 14;
+        let currentMethod = 'AI';
 
         function zoomText(direction) {
             currentFontSize += (direction * 2);
             if (currentFontSize < 10) currentFontSize = 10;
             if (currentFontSize > 48) currentFontSize = 48;
-            document.getElementById('modalTextarea').style.fontSize = currentFontSize + 'px';
+            modalCM.getWrapperElement().style.fontSize = currentFontSize + 'px';
+            modalCM.refresh();
         }
 
-        function toggleExpand(id) {
-            currentExpandedId = id;
-            const sourceEl = document.getElementById(id);
+        function selectTab(method) {
+            currentMethod = method;
+            document.getElementById('tabAI').classList.remove('active');
+            document.getElementById('tabSim').classList.remove('active');
+            
+            if (method === 'AI') {
+                document.getElementById('tabAI').classList.add('active');
+                document.getElementById('addPrevBtn').style.display = 'block';
+            } else {
+                document.getElementById('tabSim').classList.add('active');
+                document.getElementById('addPrevBtn').style.display = 'none';
+                
+                const container = document.getElementById('prevSolutionsContainer');
+                while (container.children.length > 1) {
+                    container.removeChild(container.lastChild);
+                }
+                prevCodeCMs = [prevCodeCMs[0]];
+            }
+        }
+
+        function addPrevSolution() {
+            const container = document.getElementById('prevSolutionsContainer');
+            const group = document.createElement('div');
+            group.className = 'form-group prev-sol-group';
+            group.style.marginTop = '15px';
+            
+            group.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin-bottom: 0;">Cod de Referință Suplimentar</label>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn-expand" onclick="toggleExpand(this, false)">⛶ Extinde</button>
+                        <button type="button" class="btn-expand" style="color: #ff4d4d; border-color: rgba(255, 77, 77, 0.3);" onclick="removePrevSolution(this)">Șterge</button>
+                    </div>
+                </div>
+                <textarea class="form-control prev-code-textarea" placeholder="Lipește un alt cod anterior aici..."></textarea>
+            `;
+            container.appendChild(group);
+            
+            const ta = group.querySelector('textarea');
+            prevCodeCMs.push(CodeMirror.fromTextArea(ta, cmOptions));
+        }
+
+        function removePrevSolution(btnEl) {
+            const group = btnEl.closest('.prev-sol-group');
+            const ta = group.querySelector('textarea');
+            prevCodeCMs = prevCodeCMs.filter(cm => cm.getTextArea() !== ta);
+            group.remove();
+        }
+
+        function toggleExpand(btnEl, isMain = false) {
+            let cmInstance;
+            if (isMain) {
+                cmInstance = mainCodeCM;
+            } else {
+                const ta = btnEl.closest('.form-group').querySelector('textarea');
+                cmInstance = prevCodeCMs.find(cm => cm.getTextArea() === ta);
+            }
+            currentExpandedCM = cmInstance;
+            
             const modal = document.getElementById('codeModal');
-            const modalTa = document.getElementById('modalTextarea');
             const backdrop = document.getElementById('expandBackdrop');
             const title = document.getElementById('modalTitle');
             
-            title.textContent = id === 'code' ? 'Noul Tău Cod Sursă' : 'Cod de Referință';
-            modalTa.value = sourceEl.value;
-            modalTa.style.fontSize = currentFontSize + 'px';
+            title.textContent = isMain ? 'Noul Tău Cod Sursă' : 'Cod de Referință';
+            modalCM.setValue(cmInstance.getValue());
+            modalCM.getWrapperElement().style.fontSize = currentFontSize + 'px';
             
             modal.classList.add('active');
             backdrop.classList.add('active');
-            modalTa.focus();
+            
+            setTimeout(() => modalCM.refresh(), 10);
+            modalCM.focus();
         }
         
         function closeExpanded() {
-            if (currentExpandedId) {
-                const sourceEl = document.getElementById(currentExpandedId);
-                const modalTa = document.getElementById('modalTextarea');
-                sourceEl.value = modalTa.value;
+            if (currentExpandedCM) {
+                currentExpandedCM.setValue(modalCM.getValue());
             }
             document.getElementById('codeModal').classList.remove('active');
             document.getElementById('expandBackdrop').classList.remove('active');
-            currentExpandedId = null;
+            currentExpandedCM = null;
         }
 
-        document.getElementById('modalTextarea').addEventListener('input', function() {
-            if (currentExpandedId) {
-                document.getElementById(currentExpandedId).value = this.value;
+        modalCM.on('change', function() {
+            if (currentExpandedCM) {
+                currentExpandedCM.setValue(modalCM.getValue());
             }
         });
 
         document.getElementById('submitBtn').addEventListener('click', async () => {
-            const currentCodeText = document.getElementById('code').value;
-            const prevCodeText = document.getElementById('prev_code').value;
+            const currentCodeText = mainCodeCM.getValue();
+            
+            let previousCodes = [];
+            prevCodeCMs.forEach(cm => {
+                if (cm.getValue().trim()) {
+                    previousCodes.push(cm.getValue());
+                }
+            });
             
             if(!currentCodeText.trim()) {
                 alert("Te rugăm să introduci noul tău cod sursă.");
                 return;
-            }
-
-            let previousCodes = [];
-            if(prevCodeText.trim()) {
-                previousCodes.push(prevCodeText);
             }
 
             const btn = document.getElementById('submitBtn');
@@ -594,7 +749,8 @@
 
             const payload = {
                 previous_code: previousCodes,
-                current_code: currentCodeText
+                current_code: currentCodeText,
+                method: currentMethod
             };
 
             try {
