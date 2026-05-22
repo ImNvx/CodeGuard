@@ -123,6 +123,7 @@ Oferă posibilitatea de a verifica offline, din linia de comandă, o structură 
 - Analizează recursiv un folder (ex: lucrările unor elevi, separate prin foldere).
 - Pentru fiecare folder, compară similaritatea între toate fișierele conținute, folosind funcțiile clasice de la `CodeGuard_Similarity.py`.
 - Afișează în terminal o structură arborescentă ("tree"), semnalizând cu roșu similaritățile mari (peste 70%), simplu pentru scoruri medii și cu verde pentru scoruri mici, ajutând profesorii sau asistenții să identifice rapid sursele copiate local.
+- check_folder.exe este un executabil "stand-alone"
 
 ---
 
@@ -132,13 +133,13 @@ Oferă posibilitatea de a verifica offline, din linia de comandă, o structură 
 Aplicație de frontend/demonstrație care consumă API-ul de bază:
 - Folosește Flask pentru a servi `poc_index.html` (din `templates/`).
 - Include un API proxy integrat (`/poc/<path>`) care redirecționează cu ușurință cererile din browser (care pot avea probleme de CORS) către instanța locală a API-ului principal (portul `5000`).
-- poate fi rual din folderul principal cu `python3 -m POC.proof_of_concept`
+- poate fi rulat din folderul principal cu `python3 -m POC.proof_of_concept`
 
 ### `CGinfo/app.py`
 O aplicație secundară Flask izolată, destinată testării directe a funcționalităților AI:
 - Rulează pe portul `5001` și expune o interfață de bază (`index.html`).
 - `POST /check`: Un endpoint care importă și folosește direct modulul `CodeGuard_AI` (fără a interacționa cu baza de date MySQL). Compară codul curent cu o listă de submisii anterioare furnizate prin JSON și returnează gradul de "dubioșenie" (`weird_percent`). Funcționează ca un mediu de testare rapidă, dedicat strict inferențelor rețelei neuronale.
-- poate fi rual din folderul principal cu `python3 -m POC.CGinfo.app`
+- poate fi rulat din folderul principal cu `python3 -m POC.CGinfo.app`
   
 ---
 
