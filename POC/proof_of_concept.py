@@ -3,6 +3,8 @@ import mysql.connector
 import json
 from urllib.parse import urljoin
 import requests
+from flask_cors import CORS
+
 
 POC_ROOT = ''       #prefixul pentru pagina poc
 API_ROOT = '/poc'    #prefixul pentru api-ul public
@@ -12,6 +14,7 @@ LOCAL_API_ROOT = 'http://127.0.0.1:5000/'
 
 
 app = Flask(__name__)
+CORS(app)
 
 def read_json(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -65,6 +68,8 @@ def get_table(table_name):
 
     cursor.close()
     conn.close()
+
+    print(jsonify(rows))
 
     return jsonify(rows)
 

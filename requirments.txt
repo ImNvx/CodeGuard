@@ -4,3 +4,6 @@ regex
 Flask
 torch
 transformers
+scipy
+datasets
+termcolor
