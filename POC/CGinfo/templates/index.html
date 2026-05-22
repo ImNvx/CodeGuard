@@ -767,17 +767,33 @@
                 const weirdPercentText = await response.text();
                 const weirdPercent = parseFloat(weirdPercentText);
                 
+                const resultTitle = document.querySelector('.result-title');
+                if (currentMethod === 'AI') {
+                    resultTitle.textContent = 'Analiza similarității stilului';
+                } else {
+                    resultTitle.textContent = 'Analiza de plagiat';
+                }
+                
                 resultScore.textContent = weirdPercent.toFixed(2) + '%';
                 
                 resultScore.className = 'result-score';
-                if(weirdPercent > 70) {
-                    //resultScore.classList.add('high');
-                    resultMessage.textContent = 'Similaritate ridicată detectată. Posibil plagiat.';
-                } else if(weirdPercent > 30) {
-                    resultMessage.textContent = 'Similaritate moderată.';
+                
+                if (currentMethod === 'AI') {
+                    if (weirdPercent > 70) {
+                        resultMessage.textContent = 'Stil de a scrie cod similar. Codul are același autor.';
+                    } else if (weirdPercent > 35) {
+                        resultMessage.textContent = 'Diferențe de stil moderate. Necesită o analiză suplimentară.';
+                    } else {
+                        resultMessage.textContent = 'Stil de codare complet diferit. Codul este scris de 2 autori diferiți.';
+                    }
                 } else {
-                    //resultScore.classList.add('low');
-                    resultMessage.textContent = 'Similaritate scăzută. Pare autentic.';
+                    if (weirdPercent > 70) {
+                        resultMessage.textContent = 'Similaritate ridicată detectată. Codul este plagiat.';
+                    } else if (weirdPercent > 30) {
+                        resultMessage.textContent = 'Similaritate moderată. Necesită o analiză suplimentară';
+                    } else {
+                        resultMessage.textContent = 'Similaritate scăzută. Codul nu este plagiat.';
+                    }
                 }
 
                 resultBox.classList.add('active');
