@@ -133,7 +133,7 @@ Oferă posibilitatea de a verifica offline, din linia de comandă, o structură 
 Aplicație de frontend/demonstrație care consumă API-ul de bază:
 - Folosește Flask pentru a servi `poc_index.html` (din `templates/`).
 - Include un API proxy integrat (`/poc/<path>`) care redirecționează cu ușurință cererile din browser (care pot avea probleme de CORS) către instanța locală a API-ului principal (portul `5000`).
-- poate fi rual din folderul principal cu `python3 -m POC.proof_of_concept`
+- poate fi rulat din folderul principal cu `python3 -m POC.proof_of_concept`
 
 ### `CGinfo/app.py`
 O aplicație secundară Flask izolată, destinată testării directe a funcționalităților AI:
