@@ -34,7 +34,7 @@ def normalize_tokens(code: str):
     return normalized
 
 
-def shingles(tokens, k=5):
+def shingles(tokens, k=3):
     # daca sunt prea putine token-uri
     if len(tokens) < k:
         return {" ".join(tokens)}
