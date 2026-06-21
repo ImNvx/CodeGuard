@@ -5,6 +5,12 @@ class Clasa:
         self.nivel = nivel
         self.nume = nume
         self.nr_elevi = nr_elevi
+        self.elevi = []
+
+class Elev:
+    def __init__(self, nume, istoric_submisii):
+        self.nume = nume
+        self.istoric_submisii = istoric_submisii
 
 class ButonClasa(ft.Button):
     def __init__(self, label_text):
@@ -18,9 +24,13 @@ class ButonClasa(ft.Button):
             shape=ft.RoundedRectangleBorder(radius=8)
         )
 
-def main(page: ft.Page):
 
-    clase = [Clasa(nr_elevi=28), Clasa(nivel=10, nume="B", nr_elevi=22), Clasa(nivel=11, nume="C", nr_elevi=25)] # aici o sa facem sa le ia din db mai tarziu (tinyDB pare smecher)
+def main(page: ft.Page):
+    clase = [Clasa(nume="B"), Clasa(nr_elevi=28), Clasa(nivel=10, nume="B", nr_elevi=22), Clasa(nivel=11, nume="C", nr_elevi=25), Clasa(nivel=7, nume="D", nr_elevi=33),
+             Clasa(nivel=5, nume="A")
+            ] # aici o sa facem sa le ia din db mai tarziu (tinyDB pare smecher)
+    
+    clase.sort(key=lambda k : (k.nivel, k.nume))
 
     page.title = "CGinfo"
     page.vertical_alignment = ft.MainAxisAlignment.START
@@ -45,12 +55,16 @@ def main(page: ft.Page):
             ],
             height=200
         ),
-        ft.Row(
-            controls=class_buttons, # iar sa le fac sa fie maxim 3 pe row
-            alignment=ft.MainAxisAlignment.CENTER,
-            spacing=25
-        )
     )
+
+    for i in range(0, len(clase), 3):
+        page.add(
+            ft.Row(
+                controls=class_buttons[i:i+3],
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=25
+            )
+        )
 
     #sa fac padding adjustment pe window resize
 
