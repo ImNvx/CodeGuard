@@ -26,19 +26,19 @@ class ButonClasa(ft.Button):
     def __init__(self, label_text):
         super().__init__(content=ft.Text(label_text, size=50),)
         
-        self.bgcolor = ft.Colors.BLUE_GREY_100
-        self.color = ft.Colors.BLACK
+        self.bgcolor = ft.Colors.BLUE_GREY_800
+        self.color = ft.Colors.BLUE_GREY_200
         self.width = 300
         self.height = 120
         self.style = ft.ButtonStyle(
-            shape=ft.RoundedRectangleBorder(radius=8)
+            shape=ft.RoundedRectangleBorder(radius=12)
         )
 
 class ButonAddClasa(ft.Button):
     def __init__(self, label_text):
         super().__init__(content=ft.Text(label_text, size=15, text_align=ft.TextAlign.CENTER),)
         
-        self.bgcolor = ft.Colors.LIGHT_BLUE_300
+        self.bgcolor = ft.Colors.TEAL_200
         self.color = ft.Colors.BLACK
         self.width = 200
         self.height = 50
@@ -50,18 +50,7 @@ class ButonAddClasa(ft.Button):
             shape=ft.RoundedRectangleBorder(radius=16)
         )
 
-def main(page: ft.Page):
-    db = TinyDB('db_clase.json')
-    clase = [Clasa(**i) for i in db.all()]
-
-    clase.sort(key=lambda k : (k.nivel, k.nume))
-
-    page.title = "CGinfo"
-    page.vertical_alignment = ft.MainAxisAlignment.START
-    page.theme_mode = ft.ThemeMode.DARK
-
-    class_buttons = [ButonClasa(label_text=f"{i.nivel}{i.nume}") for i in clase]
-
+def main_page(page, clase, class_buttons):
     page.add(
         ft.Stack(
             controls=[
@@ -91,10 +80,31 @@ def main(page: ft.Page):
         )
     page.add(
         ft.Row(
-            controls=[ButonAddClasa("Adăugă o clasă nouă")],
+            controls=[ButonAddClasa("Adăugă o clasă nouă",)],
             alignment=ft.MainAxisAlignment.CENTER,
         )
     )
     #sa fac padding adjustment pe window resize
+
+
+def main(page: ft.Page):
+    db = TinyDB('db_clase.json')
+    clase = [Clasa(**i) for i in db.all()]
+
+    clase.sort(key=lambda k : (k.nivel, k.nume))
+
+    page.title = "CGinfo"
+    page.vertical_alignment = ft.MainAxisAlignment.START
+    page.theme_mode = ft.ThemeMode.DARK
+
+    def classSelection(e):
+        page.clean()
+
+    class_buttons = [ButonClasa(label_text=f"{i.nivel}{i.nume}") for i in clase]
+    for i in class_buttons: #spaghetti code
+        i.on_click = classSelection
+
+    
+    main_page(page, clase, class_buttons)
 
 ft.run(main)
