@@ -1,11 +1,21 @@
 import flet as ft
+import json
+from tinydb import TinyDB, Query
 
 class Clasa:
-    def __init__(self, nivel=9, nume="A", nr_elevi=0):
+    def __init__(self, nivel=9, nume="A", nr_elevi=0, elevi=[]):
         self.nivel = nivel
         self.nume = nume
         self.nr_elevi = nr_elevi
         self.elevi = []
+
+    def to_dict(x):
+        return {
+            "nivel" : x.nivel,
+            "nume" : x.nume,
+            "nr_elevi" : x.nr_elevi,
+            "elevi" : x.elevi
+        }
 
 class Elev:
     def __init__(self, nume, istoric_submisii):
@@ -24,12 +34,26 @@ class ButonClasa(ft.Button):
             shape=ft.RoundedRectangleBorder(radius=8)
         )
 
+class ButonAddClasa(ft.Button):
+    def __init__(self, label_text):
+        super().__init__(content=ft.Text(label_text, size=15, text_align=ft.TextAlign.CENTER),)
+        
+        self.bgcolor = ft.Colors.LIGHT_BLUE_300
+        self.color = ft.Colors.BLACK
+        self.width = 200
+        self.height = 50
+        self.icon = ft.Icon(
+            ft.Icons.ADD,
+            size=25,
+        )
+        self.style = ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=16)
+        )
 
 def main(page: ft.Page):
-    clase = [Clasa(nume="B"), Clasa(nr_elevi=28), Clasa(nivel=10, nume="B", nr_elevi=22), Clasa(nivel=11, nume="C", nr_elevi=25), Clasa(nivel=7, nume="D", nr_elevi=33),
-             Clasa(nivel=5, nume="A")
-            ] # aici o sa facem sa le ia din db mai tarziu (tinyDB pare smecher)
-    
+    db = TinyDB('db_clase.json')
+    clase = [Clasa(**i) for i in db.all()]
+
     clase.sort(key=lambda k : (k.nivel, k.nume))
 
     page.title = "CGinfo"
@@ -65,7 +89,12 @@ def main(page: ft.Page):
                 spacing=25
             )
         )
-
+    page.add(
+        ft.Row(
+            controls=[ButonAddClasa("Adăugă o clasă nouă")],
+            alignment=ft.MainAxisAlignment.CENTER,
+        )
+    )
     #sa fac padding adjustment pe window resize
 
 ft.run(main)
