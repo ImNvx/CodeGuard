@@ -69,7 +69,7 @@ def kn_get_submissions(elev, problema, strat_time, end_time):
             if strat_time > submision['timestamp']:
                 break
             if end_time >= submision['timestamp']:
-                print(submision['timestamp'])
+                #print(submision['timestamp'])
                 submissions.append(submision)
             id = id - 1
     except Exception as e:
@@ -89,3 +89,5 @@ def start_contest_handler():
 
 def start_contest(strat_time, end_time, clasa, probleme):
     return
+
+### !!!!!!!!!!! ceva e putred cu timpu pe kn cred ca ii UTC+2 sau ceva
