@@ -1,7 +1,7 @@
 import flet as ft
 from tinydb import TinyDB, Query
 import sqlite3
-
+import random # !!! doar pentru dev testing
 
 def get_elev_submissions(kn_user): #returneaza toate submisiile unui elev din db
     return "int main()"
@@ -26,7 +26,8 @@ class Elev:
         self.nume = nume
         #self.istoric_submisii = istoric_submisii -> asta o sa existe doar in baza de date si dam query pe kn_user, nu il tinem in memorie
         self.kn_user = kn_user
-        self.id = 0
+        self.id = id
+        self.id = random.randint(1, 100000) # !!! doar pentru dev testing
 
 class Submisie:
     def __init__(self, content, id, user):
@@ -103,7 +104,7 @@ class ButonClasa(ft.Button):
         # adaugare lista cu elevii aici pe linia asta
         self._page.add(
             ft.Row(
-                controls=[ButonAddElev(page = self._page, back_route=self.back_route)],
+                controls=[ButonAddElev(page = self._page, clasa=self.clasa, back_route=self.back_route)],
                 alignment=ft.MainAxisAlignment.CENTER,
             )
         )
@@ -140,7 +141,7 @@ class ButonAddClasa(ft.Button):
     
 
 class ButonAddElev(ft.Button):
-    def __init__(self, page : ft.Page, back_route):
+    def __init__(self, page : ft.Page, clasa, back_route):
         super().__init__(content=ft.Text("Adaugă un elev", size=15, text_align=ft.TextAlign.CENTER),)
         
         self._page = page
@@ -157,11 +158,47 @@ class ButonAddElev(ft.Button):
         )
         self.on_click = self.add_elev
         self.back_route = back_route
+        self.clasa = clasa
     
     def add_elev(self, e):
         self._page.clean()
         self._page.title = "Adăugare elev"
-        
+        tb_nume = ft.TextField(text_align=ft.TextAlign.CENTER, text_size=18, border_color=ft.Colors.BLUE_GREY_100)
+        tb_kn_user = ft.TextField(text_align=ft.TextAlign.CENTER, text_size=18, border_color=ft.Colors.BLUE_GREY_100)
+
+        def push_elev_nou(e):
+            return
+
+        self._page.add(
+            ButonBack(self.back_route),
+            ft.Column(
+                controls=[
+                    ft.Row(
+                        controls=[
+                            ft.Text("Nume elev", size=26, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_100, width=250),
+                            tb_nume
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+                    ft.Row(
+                        controls=[
+                            ft.Text("Username kilonova", size=26, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_100, width=250),
+                            tb_kn_user
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+                    ft.Row(
+                        controls=[
+                            ft.ElevatedButton(content=ft.Text("Adaugă Elev", color=ft.Colors.BLUE_GREY_100, size=18), width=150, height=50, on_click=push_elev_nou)
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    )
+                ],
+                spacing=20,
+                alignment=ft.MainAxisAlignment.START
+            )
+        )
+
         self._page.update()
 
 # !!!! neaparat sa fac elementele sa isi dea resize in functie de window size, probabil ca event 
