@@ -7,6 +7,7 @@ from CGinfo_methods import *
 
 def main(page: ft.Page):
     db = TinyDB('db_clase.json')
+    #print(get_clasa(5, "A"))
     clase = [Clasa(**i) for i in db.all()]
     clase.sort(key=lambda k : (k.nivel, k.nume))
 

@@ -250,6 +250,13 @@ class MainPage():
             )
         )
 
+def get_clasa(nivel, nume):
+    db = TinyDB("db_clase.json")
+    q = Query()
+    res = db.search((q.nivel == nivel) & (q.nume == nume))
+    if res:
+        return Clasa(**res[0])
+
 ###de aici in jos mi am bagat eu mainile - mester
 
 
