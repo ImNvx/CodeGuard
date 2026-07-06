@@ -7,3 +7,4 @@ API/*.json
 POC/*.json
 deleted/*
 deleted
+*.db

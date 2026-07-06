@@ -27,13 +27,13 @@ class Elev:
         #self.istoric_submisii = istoric_submisii -> asta o sa existe doar in baza de date si dam query pe kn_user, nu il tinem in memorie
         self.kn_user = kn_user
         self.id = id
-        self.id = random.randint(1, 100000) # !!! doar pentru dev testing
+        #self.id = random.randint(1, 100000) # !!! doar pentru dev testing
 
-class Submisie:
-    def __init__(self, content, id, user):
-        self.content = content
-        self.id = id
-        self.user = user
+#class Submisie:
+#    def __init__(self, content, id, user):
+#        self.content = content
+#        self.id = id
+#        self.user = user
 
 class ButonBack(ft.IconButton):
     def __init__(self, dest):
@@ -249,3 +249,49 @@ class MainPage():
                 alignment=ft.MainAxisAlignment.CENTER,
             )
         )
+
+###de aici in jos mi am bagat eu mainile - mester
+
+
+class Submisie:
+    def __init__(
+        self,
+        id,
+        time_stamp,
+        content,
+        problem_id,
+        score,
+        user_id,
+        contest_id,
+        wierd_percent
+    ):
+        self.id = id
+        self.time_stamp = time_stamp
+        self.content = content
+        self.problem_id = problem_id
+        self.score = score
+        self.user_id = user_id
+        self.contest_id = contest_id
+        self.wierd_percent = wierd_percent
+
+
+class Contest:
+    def __init__(
+        self,
+        id,
+        name,
+        start_time,
+        end_time,
+        nume_clasa,
+        nivel_clasa,
+        lista_probleme,
+        fetched
+    ):
+        self.id = id
+        self.name = name
+        self.start_time = start_time
+        self.end_time = end_time
+        self.nume_clasa = nume_clasa
+        self.nivel_clasa = nivel_clasa
+        self.lista_probleme = lista_probleme
+        self.fetched = bool(fetched)
