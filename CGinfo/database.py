@@ -13,11 +13,11 @@ functii:
         score,              #int
         user_id,            #int
         contest_id,         #int
-        wierd_percent,      #float
+        weird_percent,      #float
         db_path=DB_NAME
     ):
         -adauga o submisie in baza de date
-        -wierd_percent trebuie calculat inainte ca functia sa fie apelata
+        -weird_percent trebuie calculat inainte ca functia sa fie apelata
         -nu returneaza nimic
 
     -add_contest(
@@ -33,13 +33,14 @@ functii:
         -adauga un concurs la baza de date
         -returneaza idul concursului
 
-    -get_submissions_for_elev(elev : Elev):
-        -returneaza o lista cu toate submisile elevului
+    -get_submissions_for_elev(elev : Elev, count: int = -1):
+        -daca count != -1 returneaza o lista cu #count# cele mai noi submisii elevului
+        -daca count == -1 returneaza toate submisiile elevului
         -lista este asa: [(type Submisie), (type Submisie), ...]
 
     -get_all_contests():
         -returneaza o lista cu toate concursurile
-        -lista este asa: get_unfetched_finished_contests(current_time_unix: int, db_path=DB_NAME):
+        -lista este asa: [(type Contest), (type Contest), ...]
 
     -update_contest_fetched(contest_id: int, value: bool, db_path=DB_NAME):
         -modifica fetched pentru contestul care idul egal cu contest_id
@@ -47,7 +48,7 @@ functii:
 
     -get_unfetched_finished_contests(current_time_unix: int, db_path=DB_NAME):
         -gaseste si returneaza contesturile la care inca nu le am dat fetch si care s au terminat(end_time <= curent_time_unix)
-        -returneaza o lista asa : get_unfetched_finished_contests(current_time_unix: int, db_path=DB_NAME):
+        -returneaza o lista asa : [(type Contest), (type Contest), ...]
 '''
 
 import sqlite3
@@ -95,7 +96,7 @@ def initialize_database(db_path=DB_NAME):
             score INTEGER,
             user_id INTEGER,
             contest_id INTEGER,
-            wierd_percent REAL,
+            weird_percent REAL,
             FOREIGN KEY (contest_id) REFERENCES concursuri(id)
         );
     """)
@@ -113,7 +114,7 @@ def add_submission(
     score,
     user_id,
     contest_id,
-    wierd_percent,
+    weird_percent,
     db_path=DB_NAME
 ):
     print(os.path.abspath(DB_NAME))
@@ -129,7 +130,7 @@ def add_submission(
             score,
             user_id,
             contest_id,
-            wierd_percent
+            weird_percent
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """, (
@@ -140,7 +141,7 @@ def add_submission(
         score,
         user_id,
         contest_id,
-        wierd_percent
+        weird_percent
     ))
 
     conn.commit()
@@ -188,25 +189,41 @@ def add_contest( # creaza un conccurs si returneaza idul sau
 
     return contest_id
 
-def get_submissions_for_elev(elev : Elev):
+def get_submissions_for_elev(elev: Elev, count: int = -1):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    print(os.path.abspath(DB_NAME))
-    print(type(elev.id))
 
-    cursor.execute("""
-        SELECT
-            kn_submision_id,
-            time_stamp,
-            source_code,
-            problem_id,
-            score,
-            user_id,
-            contest_id,
-            wierd_percent
-        FROM submissi
-        WHERE user_id = ?
-    """, (elev.id,))
+    if count == -1:
+        cursor.execute("""
+            SELECT
+                kn_submision_id,
+                time_stamp,
+                source_code,
+                problem_id,
+                score,
+                user_id,
+                contest_id,
+                weird_percent
+            FROM submissi
+            WHERE user_id = ?
+            ORDER BY time_stamp DESC
+        """, (elev.id,))
+    else:
+        cursor.execute("""
+            SELECT
+                kn_submision_id,
+                time_stamp,
+                source_code,
+                problem_id,
+                score,
+                user_id,
+                contest_id,
+                weird_percent
+            FROM submissi
+            WHERE user_id = ?
+            ORDER BY time_stamp DESC
+            LIMIT ?
+        """, (elev.id, count))
 
     rows = cursor.fetchall()
     conn.close()
@@ -222,7 +239,7 @@ def get_submissions_for_elev(elev : Elev):
             score=row[4],
             user_id=row[5],
             contest_id=row[6],
-            wierd_percent=row[7]
+            weird_percent=row[7]
         ))
 
     return submissions
@@ -340,7 +357,7 @@ if __name__ == "__main__": #asta ii numa de test
             score=100,
             user_id=42,
             contest_id=contest_id,
-            wierd_percent=0
+            weird_percent=0
         )
         add_submission(
             kn_submission_id=89,
@@ -350,7 +367,7 @@ if __name__ == "__main__": #asta ii numa de test
             score=100,
             user_id=43,
             contest_id=1,
-            wierd_percent=0
+            weird_percent=0
         )
 
     elev1 = Elev("Andrei", "Andrei_the_killer", 42)

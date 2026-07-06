@@ -1,8 +1,14 @@
 from bs4 import BeautifulSoup
 from lxml import etree
 import requests
-from CGinfo.CGinfo_methods import Clasa, Elev
-from API.CodeGuard_Database import read_json
+from CGinfo.CGinfo_methods import Clasa, Elev, Submisie, Contest
+from CGinfo.CGinfo_methods import get_clasa
+from CGinfo.database import *
+from threading import Thread
+from AI.CodeGuard_AI import CodeGuard
+import time
+
+guard = CodeGuard() # initalizam AI-ul
 
 def get_kn_id(user): #returneaza un int, idul userurlui daca acest user exista, sau -1 daca intampina vreo eroare
     try:
@@ -65,7 +71,7 @@ def kn_get_submissions(elev, problema, strat_time, end_time):
 
         while True:
             submision = kn_get_submission(id)
-            #print(submision)
+            #print(submision) 
             if strat_time > submision['timestamp']:
                 break
             if end_time >= submision['timestamp']:
@@ -77,17 +83,36 @@ def kn_get_submissions(elev, problema, strat_time, end_time):
         return []
     return submissions
 
-def end_contest(strat_time, end_time, clasa, probleme):
+def end_contest(strat_time, end_time, clasa : Clasa, probleme, contest_id):
     for elev in clasa.elevi:
         for problema in probleme:
             data = kn_get_submissions(elev, problema, strat_time, end_time)
             for submission in data:
-                add_to_db(submission['id'], submission['time_stamp'], submission['source_code'], submission['problem_id'], subamission['score'], submission['user_id'])
+                weird_percent = 0
+                history = get_submissions_for_elev(elev. CONTEXT_LENGHT)
+
+                if(len(history) != 0):
+                    weird_percent = 100 - guard.checkSubmission(history, submission['source_code']) # verifica solutia curenta
+
+                add_submission(submission['id'], submission['time_stamp'], submission['source_code'], submission['problem_id'], subamission['score'], submission['user_id'], contest_id, weird_percent)
+
+def get_time():
+    t = int(time.time() * 1000) # ne trb in ms
+    return t
 
 def start_contest_handler():
-    return
-
-def start_contest(strat_time, end_time, clasa, probleme):
-    return
+    while True:
+        contests = get_unfetched_finished_contests(get_time())
+        for contest in contests:
+            clasa = get_clasa(contest.nivel_clasa, contest.nume_clasa)
+            end_contest(contest.start_time, contest.end_time, clasa, contest.lista_probleme, contest.id)
+            update_contest_fetched(contest.id , True)
 
 ### !!!!!!!!!!! ceva e putred cu timpu pe kn cred ca ii UTC+2 sau ceva
+
+if __name__ == "__main__":
+    print(get_time())
+
+'''
+nu am test start_contest_handler si mai nimic de la contesturi, nici partea cu AI
+'''
