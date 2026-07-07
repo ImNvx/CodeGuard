@@ -37,6 +37,11 @@ functii:
         -daca count != -1 returneaza o lista cu #count# cele mai noi submisii elevului
         -daca count == -1 returneaza toate submisiile elevului
         -lista este asa: [(type Submisie), (type Submisie), ...]
+    
+    -get_batch_for_jaccard(elev : Elev, problem_id, count = -1, db_path = DB_NAME):
+        -daca count != -1 returneaza o lista cu #count# cele mai noi submisii acceptate la problema problem_id trimise de alt utilizator decat elev
+        -daca count == -1 returneaza o lista cu toate submisiile acceptate la problema problem_id trimise de alt utilizator decat elev
+        -lista este asa: [(type Submisie), (type Submisie), ...]
 
     -get_all_contests():
         -returneaza o lista cu toate concursurile
@@ -329,6 +334,61 @@ def get_unfetched_finished_contests(current_time_unix: int, db_path=DB_NAME):
         ))
 
     return contests
+
+def get_batch_for_jaccard(elev : Elev, problem_id, count = -1, db_path = DB_NAME):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    if count == -1:
+        cursor.execute("""
+            SELECT
+                kn_submision_id,
+                time_stamp,
+                source_code,
+                problem_id,
+                score,
+                user_id,
+                contest_id,
+                weird_percent
+            FROM submissi
+            WHERE user_id != ? AND score = 100 AND problem_id = ?
+            ORDER BY time_stamp DESC
+        """, (elev.id, problem_id))
+    else:
+        cursor.execute("""
+            SELECT
+                kn_submision_id,
+                time_stamp,
+                source_code,
+                problem_id,
+                score,
+                user_id,
+                contest_id,
+                weird_percent
+            FROM submissi
+            WHERE user_id != ? AND score = 100 AND problem_id = ?
+            ORDER BY time_stamp DESC
+            LIMIT ?
+        """, (elev.id, problem_id, count))
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    submissions = []
+
+    for row in rows:
+        submissions.append(Submisie(
+            id=row[0],
+            time_stamp=row[1],
+            content=row[2],
+            problem_id=row[3],
+            score=row[4],
+            user_id=row[5],
+            contest_id=row[6],
+            weird_percent=row[7]
+        ))
+
+    return submissions
 
 if __name__ == "__main__": #asta ii numa de test
     initialize_database()
