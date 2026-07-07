@@ -2,6 +2,7 @@ import flet as ft
 from tinydb import TinyDB, Query
 import sqlite3
 import random # !!! doar pentru dev testing
+#from kn import get_kn_id 
 
 def get_elev_submissions(kn_user): #returneaza toate submisiile unui elev din db
     return "int main()"
@@ -28,6 +29,13 @@ class Elev:
         self.kn_user = kn_user
         self.id = id
         #self.id = random.randint(1, 100000) # !!! doar pentru dev testing
+
+    def to_dict(self):
+        return {
+            "nume" : self.nume,
+            "kn_user" : self.kn_user,
+            "id" : self.id
+        }
 
 #class Submisie:
 #    def __init__(self, content, id, user):
@@ -85,7 +93,7 @@ class ButonClasa(ft.Button):
             )
         )
         
-        db = TinyDB("db_clase.json")
+        db = TinyDB("CGinfo/db_clase.json")
         q = Query()
         res = db.search((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume)) # aceste 2 conditii ar trebui sa fie suficiente parerea mea
         
@@ -167,7 +175,17 @@ class ButonAddElev(ft.Button):
         tb_kn_user = ft.TextField(text_align=ft.TextAlign.CENTER, text_size=18, border_color=ft.Colors.BLUE_GREY_100)
 
         def push_elev_nou(e):
-            return
+            db = TinyDB("CGinfo/db_clase.json")
+            q = Query()
+
+            res = db.get((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume))
+            elev = Elev(nume=tb_nume.value, kn_user=tb_kn_user.value, id=3) #get_kn_id
+
+            res['elevi'].append(elev.to_dict())
+            db.update(
+                {"elevi": res['elevi']},
+                (q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume)
+            )
 
         self._page.add(
             ButonBack(self.back_route),
@@ -226,9 +244,15 @@ class MainPage():
                 ),
                 
                 ft.Container(
-                    content=ft.Image(src="cg_shield.png", width=125),
+                    content=ft.Image(src="CGinfo/cg_shield.png", width=125),
                     alignment=ft.Alignment.TOP_CENTER,
                     padding=20,
+                ),
+                
+                ft.Container(
+                    content=ContestButton(self._page, back_route=self.loadPage),
+                    alignment=ft.Alignment.TOP_RIGHT,
+                    padding=15
                 )
             ],
             height=200
@@ -245,7 +269,7 @@ class MainPage():
             )
         self._page.add(
             ft.Row(
-                controls=[ButonAddClasa(page=self._page, back_route=self.loadPage)],
+                controls=[ButonAddClasa(page=self._page, back_route=self.loadPage), ContestHistoryButton(page=self._page, back_route=self.loadPage)],
                 alignment=ft.MainAxisAlignment.CENTER,
             )
         )
@@ -256,6 +280,42 @@ def get_clasa(nivel, nume):
     res = db.search((q.nivel == nivel) & (q.nume == nume))
     if res:
         return Clasa(**res[0])
+    
+class ContestButton(ft.Button):
+    def __init__(self, page : ft.Page, back_route):
+        super().__init__(content=ft.Row(controls=[ft.Text("Contest nou", size=32, weight='bold', text_align=ft.TextAlign.CENTER),
+                                 ft.Icon(ft.Icons.PLAY_ARROW_ROUNDED, size=80)])) # prea multe paranteze haha
+        self._page = page
+        self.back_route = back_route
+
+        self.bgcolor = "#B2FF59"
+        self.color = ft.Colors.BLUE_GREY_900
+        self.width = 300
+        self.height = 80
+        self.style = ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=18)
+        )
+        self.on_click = self.contest_creation
+
+    def contest_creation(self):
+        return
+
+class ContestHistoryButton(ft.IconButton):
+    def __init__(self, page : ft.Page, back_route):
+        super().__init__(icon=ft.Icons.HISTORY_ROUNDED, icon_size=35)
+        self._page = page
+        self.back_route = back_route
+
+        self.bgcolor = "#3A3A4A"
+        self.color = ft.Colors.BLUE_GREY_100
+        self.width = 50
+        self.height = 50
+        self.style = ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=15)
+        )
+
+    def contest_history(self):
+        return
 
 ###de aici in jos mi am bagat eu mainile - mester
 
@@ -270,7 +330,7 @@ class Submisie:
         score,
         user_id,
         contest_id,
-        wierd_percent
+        weird_percent
     ):
         self.id = id
         self.time_stamp = time_stamp
@@ -279,7 +339,7 @@ class Submisie:
         self.score = score
         self.user_id = user_id
         self.contest_id = contest_id
-        self.wierd_percent = wierd_percent
+        self.weird_percent = weird_percent
 
 
 class Contest:
