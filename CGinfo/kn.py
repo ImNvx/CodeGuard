@@ -10,6 +10,9 @@ import time
 
 guard = CodeGuard() # initalizam AI-ul
 
+CONTEXT_LENGHT = 10 # cate submisi ne intereseaza
+
+
 def get_kn_id(user): #returneaza un int, idul userurlui daca acest user exista, sau -1 daca intampina vreo eroare
     try:
         url = "https://kilonova.ro/profile/" + user
@@ -89,7 +92,7 @@ def end_contest(strat_time, end_time, clasa : Clasa, probleme, contest_id):
             data = kn_get_submissions(elev, problema, strat_time, end_time)
             for submission in data:
                 weird_percent = 0
-                history = get_submissions_for_elev(elev. CONTEXT_LENGHT)
+                history = get_submissions_for_elev(elev, CONTEXT_LENGHT)
 
                 if(len(history) != 0):
                     weird_percent = 100 - guard.checkSubmission(history, submission['source_code']) # verifica solutia curenta
