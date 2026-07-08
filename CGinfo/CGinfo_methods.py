@@ -144,13 +144,38 @@ class ButonAddElev(ft.Button):
             q = Query()
 
             res = db.get((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume))
-            elev = Elev(nume=tb_nume.value, kn_user=tb_kn_user.value, id=get_kn_id(tb_kn_user.value))
+            if res: # am adaugat checking ca sa aiba sens mesajul de succes :))
+                elev = Elev(nume=tb_nume.value, kn_user=tb_kn_user.value, id=get_kn_id(tb_kn_user.value))
 
-            res['elevi'].append(elev.to_dict())
-            db.update(
-                {"elevi": res['elevi']},
-                (q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume)
-            )
+                res['elevi'].append(elev.to_dict())
+                db.update(
+                    {"elevi": res['elevi']},
+                    (q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume)
+                )
+                self._page.show_dialog(ft.SnackBar(
+                    content=ft.Row(
+                        controls=[
+                        ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                        ft.Text("Elev adăugat cu succes!", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        ),
+                    duration=3000,
+                    bgcolor=ft.Colors.TEAL_600
+                ))
+                self._page.update()
+            else:
+                self._page.show_dialog(ft.SnackBar(
+                    content=ft.Row(
+                        controls=[
+                        ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                        ft.Text("Eroare, clasa nu există în baza de date sau ceva a mers rău", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        ),
+                    duration=3000,
+                    bgcolor=ft.Colors.RED_900
+                ))
+                self._page.update()
+            
 
         self._page.add(
             ButonBack(self.back_route),
