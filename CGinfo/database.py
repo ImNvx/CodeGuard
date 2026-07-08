@@ -102,6 +102,7 @@ def initialize_database(db_path=DB_NAME):
             user_id INTEGER,
             contest_id INTEGER,
             weird_percent REAL,
+            similarity_percent REAL,
             FOREIGN KEY (contest_id) REFERENCES concursuri(id)
         );
     """)
@@ -120,6 +121,7 @@ def add_submission(
     user_id,
     contest_id,
     weird_percent,
+    similarity_percent,
     db_path=DB_NAME
 ):
     print(os.path.abspath(DB_NAME))
@@ -135,9 +137,10 @@ def add_submission(
             score,
             user_id,
             contest_id,
-            weird_percent
+            weird_percent,
+            similarity_percent
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         kn_submission_id,
         time_stamp,
@@ -146,7 +149,8 @@ def add_submission(
         score,
         user_id,
         contest_id,
-        weird_percent
+        weird_percent,
+        similarity_percent
     ))
 
     conn.commit()
@@ -208,7 +212,8 @@ def get_submissions_for_elev(elev: Elev, count: int = -1):
                 score,
                 user_id,
                 contest_id,
-                weird_percent
+                weird_percent,
+                similarity_percent
             FROM submissi
             WHERE user_id = ?
             ORDER BY time_stamp DESC
@@ -223,7 +228,8 @@ def get_submissions_for_elev(elev: Elev, count: int = -1):
                 score,
                 user_id,
                 contest_id,
-                weird_percent
+                weird_percent,
+                similarity_percent
             FROM submissi
             WHERE user_id = ?
             ORDER BY time_stamp DESC
@@ -244,7 +250,8 @@ def get_submissions_for_elev(elev: Elev, count: int = -1):
             score=row[4],
             user_id=row[5],
             contest_id=row[6],
-            weird_percent=row[7]
+            weird_percent=row[7],
+            similarity_percent=row[8]
         ))
 
     return submissions
@@ -349,7 +356,8 @@ def get_batch_for_jaccard(elev : Elev, problem_id, count = -1, db_path = DB_NAME
                 score,
                 user_id,
                 contest_id,
-                weird_percent
+                weird_percent,
+                similarity_percent
             FROM submissi
             WHERE user_id != ? AND score = 100 AND problem_id = ?
             ORDER BY time_stamp DESC
@@ -364,7 +372,8 @@ def get_batch_for_jaccard(elev : Elev, problem_id, count = -1, db_path = DB_NAME
                 score,
                 user_id,
                 contest_id,
-                weird_percent
+                weird_percent,
+                similarity_percent
             FROM submissi
             WHERE user_id != ? AND score = 100 AND problem_id = ?
             ORDER BY time_stamp DESC
@@ -385,7 +394,8 @@ def get_batch_for_jaccard(elev : Elev, problem_id, count = -1, db_path = DB_NAME
             score=row[4],
             user_id=row[5],
             contest_id=row[6],
-            weird_percent=row[7]
+            weird_percent=row[7],
+            similarity_percent=row[8]
         ))
 
     return submissions

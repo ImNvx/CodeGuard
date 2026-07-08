@@ -38,7 +38,8 @@ class Submisie:
         score,
         user_id,
         contest_id,
-        weird_percent
+        weird_percent,
+        similarity_percent
     ):
         self.id = id
         self.time_stamp = time_stamp
@@ -48,6 +49,7 @@ class Submisie:
         self.user_id = user_id
         self.contest_id = contest_id
         self.weird_percent = weird_percent
+        self.similarity_percent = similarity_percent
 
 
 class Contest:

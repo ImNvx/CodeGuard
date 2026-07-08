@@ -10,7 +10,7 @@ from tinydb import TinyDB, Query
 
 guard = CodeGuard() # initalizam AI-ul
 
-CONTEXT_LENGHT = 10 # cate submisi ne intereseaza
+CONTEXT_LENGTH = 10 # cate submisi ne intereseaza
 
 def get_clasa(nivel, nume):
     db = TinyDB("db_clase.json")
@@ -103,7 +103,7 @@ def end_contest(strat_time, end_time, clasa : Clasa, probleme, contest_id):
                 if(len(history) != 0):
                     weird_percent = 100 - guard.checkSubmission(history, submission['source_code']) # verifica solutia curenta
 
-                add_submission(submission['id'], submission['time_stamp'], submission['source_code'], submission['problem_id'], subamission['score'], submission['user_id'], contest_id, weird_percent)
+                add_submission(submission['id'], submission['time_stamp'], submission['source_code'], submission['problem_id'], submission['score'], submission['user_id'], contest_id, weird_percent)
 
 def get_time():
     t = int(time.time() * 1000) # ne trb in ms
