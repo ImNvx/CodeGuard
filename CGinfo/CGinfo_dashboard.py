@@ -2,8 +2,7 @@ import flet as ft
 import json
 from tinydb import TinyDB, Query
 import sqlite3
-from CGinfo_methods import *
-
+from CGinfo.CGinfo_methods import *
 
 def main(page: ft.Page):
     db = TinyDB('CGinfo/db_clase.json')

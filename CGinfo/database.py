@@ -58,7 +58,7 @@ functii:
 
 import sqlite3
 import os
-from CGinfo.CGinfo_methods import Elev, Contest, Submisie
+from CGinfo.CGinfo_ds import Elev, Contest, Submisie
 import json
 
 

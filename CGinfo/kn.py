@@ -1,17 +1,23 @@
 from bs4 import BeautifulSoup
 from lxml import etree
 import requests
-from CGinfo.CGinfo_methods import Clasa, Elev, Submisie, Contest
-from CGinfo.CGinfo_methods import get_clasa
+from CGinfo.CGinfo_ds import Clasa, Elev, Submisie, Contest
 from CGinfo.database import *
 from threading import Thread
 from AI.CodeGuard_AI import CodeGuard
 import time
+from tinydb import TinyDB, Query
 
 guard = CodeGuard() # initalizam AI-ul
 
 CONTEXT_LENGHT = 10 # cate submisi ne intereseaza
 
+def get_clasa(nivel, nume):
+    db = TinyDB("db_clase.json")
+    q = Query()
+    res = db.search((q.nivel == nivel) & (q.nume == nume))
+    if res:
+        return Clasa(**res[0])
 
 def get_kn_id(user): #returneaza un int, idul userurlui daca acest user exista, sau -1 daca intampina vreo eroare
     try:
