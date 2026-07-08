@@ -38,8 +38,8 @@ class ButonClasa(ft.Button):
         
         self._page = page
         self.clasa = clasa
-        self.bgcolor = ft.Colors.BLUE_GREY_800
-        self.color = ft.Colors.BLUE_GREY_200
+        self.bgcolor = ft.Colors.LIGHT_BLUE_ACCENT_100
+        self.color = ft.Colors.BLACK
         self.width = 300
         self.height = 120
         self.style = ft.ButtonStyle(
@@ -85,16 +85,16 @@ class ButonClasa(ft.Button):
 
 class ButonAddClasa(ft.Button):
     def __init__(self, page : ft.Page, back_route):
-        super().__init__(content=ft.Text("Adaugă o clasă nouă", size=15, text_align=ft.TextAlign.CENTER),)
+        super().__init__(content=ft.Text("Adaugă o clasă nouă", size=16, text_align=ft.TextAlign.CENTER),)
         
         self._page = page
-        self.bgcolor = ft.Colors.TEAL_200
+        self.bgcolor = ft.Colors.TEAL_ACCENT_400
         self.color = ft.Colors.BLACK
         self.width = 200
         self.height = 50
         self.icon = ft.Icon(
-            ft.Icons.ADD,
-            size=25,
+            ft.Icons.ADD_ROUNDED,
+            size=35,
         )
         self.style = ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=16)
@@ -144,7 +144,7 @@ class ButonAddElev(ft.Button):
             q = Query()
 
             res = db.get((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume))
-            elev = Elev(nume=tb_nume.value, kn_user=tb_kn_user.value, id=3) #get_kn_id
+            elev = Elev(nume=tb_nume.value, kn_user=tb_kn_user.value, id=get_kn_id(tb_kn_user.value))
 
             res['elevi'].append(elev.to_dict())
             db.update(
@@ -246,7 +246,7 @@ class ContestButton(ft.Button):
         self._page = page
         self.back_route = back_route
 
-        self.bgcolor = "#B2FF59"
+        self.bgcolor = ft.Colors.TEAL_ACCENT_100
         self.color = ft.Colors.BLUE_GREY_900
         self.width = 300
         self.height = 80
