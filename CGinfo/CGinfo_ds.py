@@ -3,7 +3,7 @@ class Clasa:
         self.nivel = nivel
         self.nume = nume
         self.nr_elevi = nr_elevi
-        self.elevi = []
+        self.elevi = elevi
 
     def to_dict(x):
         return {
@@ -31,15 +31,15 @@ class Elev:
 class Submisie:
     def __init__(
         self,
-        id,
-        time_stamp,
-        content,
-        problem_id,
-        score,
-        user_id,
-        contest_id,
-        weird_percent,
-        similarity_percent
+        id : int,
+        time_stamp : int,
+        content : str,
+        problem_id : int,
+        score : int,
+        user_id : int,
+        contest_id : int,
+        weird_percent : float,
+        similarity_percent : float
     ):
         self.id = id
         self.time_stamp = time_stamp

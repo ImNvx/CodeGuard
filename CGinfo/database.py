@@ -6,14 +6,7 @@ functii:
         -nu returneaza nimic
 
     -add_submission(
-        kn_submission_id,   #int
-        time_stamp,         #int , timp UNIX
-        source_code,        #string
-        problem_id,         #int
-        score,              #int
-        user_id,            #int
-        contest_id,         #int
-        weird_percent,      #float
+        submisie : Submisie,
         db_path=DB_NAME
     ):
         -adauga o submisie in baza de date
@@ -33,14 +26,37 @@ functii:
         -adauga un concurs la baza de date
         -returneaza idul concursului
 
+    -get_submissions_from_db(id: int):
+        -returneaza submisia cu idul egal cu id
+        -Note: tabelul submisii are doua chei principale kn_submission_id si contest_id (pentru a evita erori cand ai concursuri care se suprapun), deci va varia contest_id
+        -type Submisie
+    
+    -get_submissions_from_db(id: int, contest_id : int):
+        -returneaza submisia cu idul egal cu id de la contestul contest_id
+        -type Submisie
+
+    -get_submissions_of_contest(contest_id : int):
+        -returneaza toate submisile din contest
+        -type [Submisie, Submisie, ...]
+
     -get_submissions_for_elev(elev : Elev, count: int = -1):
         -daca count != -1 returneaza o lista cu #count# cele mai noi submisii elevului
         -daca count == -1 returneaza toate submisiile elevului
-        -lista este asa: [(type Submisie), (type Submisie), ...]
+        -lista este asa: [(type Submisie), (type Submisie), ...]  
     
-    -get_batch_for_jaccard(elev : Elev, problem_id, count = -1, db_path = DB_NAME):
+    -get_batch_for_ai(elev : Elev, count = -1, db_path = DB_NAME):
+        -daca count != -1 returneaza o lista cu #count# cele mai noi submisii acceptate trimise de utilizatorul elev
+        -daca count == -1 returneaza o lista cu toate submisiile trimise de utilizatorul elev
+        -lista este asa: [(type Submisie), (type Submisie), ...]
+
+    -get_batch_for_jaccard_other(elev : Elev, problem_id, count = -1, db_path = DB_NAME):
         -daca count != -1 returneaza o lista cu #count# cele mai noi submisii acceptate la problema problem_id trimise de alt utilizator decat elev
         -daca count == -1 returneaza o lista cu toate submisiile acceptate la problema problem_id trimise de alt utilizator decat elev
+        -lista este asa: [(type Submisie), (type Submisie), ...]
+
+    -get_batch_for_jaccard_self(elev : Elev, problem_id, count = -1, db_path = DB_NAME):
+        -daca count != -1 returneaza o lista cu #count# cele mai noi submisii acceptate la problema problem_id trimise de utilizator elev
+        -daca count == -1 returneaza o lista cu toate submisiile acceptate la problema problem_id trimise de utilizator elev
         -lista este asa: [(type Submisie), (type Submisie), ...]
 
     -get_all_contests():
@@ -49,6 +65,10 @@ functii:
 
     -update_contest_fetched(contest_id: int, value: bool, db_path=DB_NAME):
         -modifica fetched pentru contestul care idul egal cu contest_id
+        -nu returneaza nimic
+    
+    -update_submission_similarity(submission_id: int, contest_id : int, value: float):
+        -modifica similariatate pentru submisia care idul egal cu submission_id
         -nu returneaza nimic
 
     -get_unfetched_finished_contests(current_time_unix: int, db_path=DB_NAME):
@@ -94,7 +114,7 @@ def initialize_database(db_path=DB_NAME):
 
     cursor.execute("""
         CREATE TABLE submissi (
-            kn_submision_id INTEGER PRIMARY KEY,
+            kn_submission_id INTEGER,
             time_stamp INTEGER,
             source_code TEXT,
             problem_id INTEGER,
@@ -103,6 +123,7 @@ def initialize_database(db_path=DB_NAME):
             contest_id INTEGER,
             weird_percent REAL,
             similarity_percent REAL,
+            PRIMARY KEY (kn_submission_id, contest_id),
             FOREIGN KEY (contest_id) REFERENCES concursuri(id)
         );
     """)
@@ -113,24 +134,16 @@ def initialize_database(db_path=DB_NAME):
     print("Baza de date a fost creata impreuna cu tabelele")
 
 def add_submission(
-    kn_submission_id,
-    time_stamp,
-    source_code,
-    problem_id,
-    score,
-    user_id,
-    contest_id,
-    weird_percent,
-    similarity_percent,
+    submission : Submisie,
     db_path=DB_NAME
 ):
-    print(os.path.abspath(DB_NAME))
+    
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
     cursor.execute("""
         INSERT INTO submissi (
-            kn_submision_id,
+            kn_submission_id,
             time_stamp,
             source_code,
             problem_id,
@@ -142,15 +155,15 @@ def add_submission(
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        kn_submission_id,
-        time_stamp,
-        source_code,
-        problem_id,
-        score,
-        user_id,
-        contest_id,
-        weird_percent,
-        similarity_percent
+        submission.id,
+        submission.time_stamp,
+        submission.content,
+        submission.problem_id,
+        submission.score,
+        submission.user_id,
+        submission.contest_id,
+        submission.weird_percent,
+        submission.similarity_percent
     ))
 
     conn.commit()
@@ -198,6 +211,101 @@ def add_contest( # creaza un conccurs si returneaza idul sau
 
     return contest_id
 
+def get_submissions_from_db(id: int, contest_id : int = -1):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    if(contest_id == -1):
+        cursor.execute("""
+            SELECT
+                kn_submission_id,
+                time_stamp,
+                source_code,
+                problem_id,
+                score,
+                user_id,
+                contest_id,
+                weird_percent,
+                similarity_percent
+            FROM submissi
+            WHERE kn_submission_id = ?
+            ORDER BY time_stamp DESC
+        """, (id,))
+    else:
+        cursor.execute("""
+            SELECT
+                kn_submission_id,
+                time_stamp,
+                source_code,
+                problem_id,
+                score,
+                user_id,
+                contest_id,
+                weird_percent,
+                similarity_percent
+            FROM submissi
+            WHERE kn_submission_id = ? AND contest_id = ?
+            ORDER BY time_stamp DESC
+        """, (id, contest_id))
+
+    rows = cursor.fetchall()
+    row = rows[0]
+    conn.close()
+
+    submission = Submisie(
+            id=row[0],
+            time_stamp=row[1],
+            content=row[2],
+            problem_id=row[3],
+            score=row[4],
+            user_id=row[5],
+            contest_id=row[6],
+            weird_percent=row[7],
+            similarity_percent=row[8]
+    )
+
+    return submission
+
+
+def get_submissions_of_contest(contest_id: int):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            kn_submission_id,
+            time_stamp,
+            source_code,
+            problem_id,
+            score,
+            user_id,
+            contest_id,
+            weird_percent,
+            similarity_percent
+        FROM submissi
+        WHERE contest_id = ?
+        ORDER BY time_stamp DESC
+    """, (contest_idid,))
+
+    rows = cursor.fetchall()
+    row = rows[0]
+    conn.close()
+
+    submission = Submisie(
+            id=row[0],
+            time_stamp=row[1],
+            content=row[2],
+            problem_id=row[3],
+            score=row[4],
+            user_id=row[5],
+            contest_id=row[6],
+            weird_percent=row[7],
+            similarity_percent=row[8]
+    )
+
+    return submission
+
+
 def get_submissions_for_elev(elev: Elev, count: int = -1):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -205,7 +313,7 @@ def get_submissions_for_elev(elev: Elev, count: int = -1):
     if count == -1:
         cursor.execute("""
             SELECT
-                kn_submision_id,
+                kn_submission_id,
                 time_stamp,
                 source_code,
                 problem_id,
@@ -221,7 +329,7 @@ def get_submissions_for_elev(elev: Elev, count: int = -1):
     else:
         cursor.execute("""
             SELECT
-                kn_submision_id,
+                kn_submission_id,
                 time_stamp,
                 source_code,
                 problem_id,
@@ -305,6 +413,19 @@ def update_contest_fetched(contest_id: int, value: bool, db_path=DB_NAME):
     conn.commit()
     conn.close()
 
+def update_submission_similarity(submission_id: int, value: float, db_path=DB_NAME):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE submissi
+        SET similarity_percent = ?
+        WHERE id = ?
+    """, (value, submission_id))
+
+    conn.commit()
+    conn.close()
+
 def get_unfetched_finished_contests(current_time_unix: int, db_path=DB_NAME):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -342,14 +463,73 @@ def get_unfetched_finished_contests(current_time_unix: int, db_path=DB_NAME):
 
     return contests
 
-def get_batch_for_jaccard(elev : Elev, problem_id, count = -1, db_path = DB_NAME):
+def get_batch_for_ai(elev: Elev, count: int = -1):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    if count == -1:
+        cursor.execute("""
+            SELECT
+                kn_submission_id,
+                time_stamp,
+                source_code,
+                problem_id,
+                score,
+                user_id,
+                contest_id,
+                weird_percent,
+                similarity_percent
+            FROM submissi
+            WHERE user_id = ? AND score == 100
+            ORDER BY time_stamp DESC
+        """, (elev.id,))
+    else:
+        cursor.execute("""
+            SELECT
+                kn_submission_id,
+                time_stamp,
+                source_code,
+                problem_id,
+                score,
+                user_id,
+                contest_id,
+                weird_percent,
+                similarity_percent
+            FROM submissi
+            WHERE user_id = ? AND score == 100
+            ORDER BY time_stamp DESC
+            LIMIT ?
+        """, (elev.id, count))
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    submissions = []
+
+    for row in rows:
+        submissions.append(Submisie(
+            id=row[0],
+            time_stamp=row[1],
+            content=row[2],
+            problem_id=row[3],
+            score=row[4],
+            user_id=row[5],
+            contest_id=row[6],
+            weird_percent=row[7],
+            similarity_percent=row[8]
+        ))
+
+    return submissions
+
+
+def get_batch_for_jaccard_other(elev : Elev, problem_id : int, contest_id : int, count = -1, db_path = DB_NAME):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
     if count == -1:
         cursor.execute("""
             SELECT
-                kn_submision_id,
+                kn_submission_id,
                 time_stamp,
                 source_code,
                 problem_id,
@@ -359,13 +539,13 @@ def get_batch_for_jaccard(elev : Elev, problem_id, count = -1, db_path = DB_NAME
                 weird_percent,
                 similarity_percent
             FROM submissi
-            WHERE user_id != ? AND score = 100 AND problem_id = ?
+            WHERE user_id != ? AND score = 100 AND problem_id = ? AND contest_id = ?
             ORDER BY time_stamp DESC
-        """, (elev.id, problem_id))
+        """, (elev.id, problem_id, contest_id))
     else:
         cursor.execute("""
             SELECT
-                kn_submision_id,
+                kn_submission_id,
                 time_stamp,
                 source_code,
                 problem_id,
@@ -375,10 +555,68 @@ def get_batch_for_jaccard(elev : Elev, problem_id, count = -1, db_path = DB_NAME
                 weird_percent,
                 similarity_percent
             FROM submissi
-            WHERE user_id != ? AND score = 100 AND problem_id = ?
+            WHERE user_id != ? AND score = 100 AND problem_id = ? AND contest_id = ?
             ORDER BY time_stamp DESC
             LIMIT ?
-        """, (elev.id, problem_id, count))
+        """, (elev.id, problem_id, contest_id, count))
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    submissions = []
+
+    for row in rows:
+        submissions.append(Submisie(
+            id=row[0],
+            time_stamp=row[1],
+            content=row[2],
+            problem_id=row[3],
+            score=row[4],
+            user_id=row[5],
+            contest_id=row[6],
+            weird_percent=row[7],
+            similarity_percent=row[8]
+        ))
+
+    return submissions
+
+def get_batch_for_jaccard_self(elev : Elev, problem_id : int, contest_id : int, count = -1, db_path = DB_NAME):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    if count == -1:
+        cursor.execute("""
+            SELECT
+                kn_submission_id,
+                time_stamp,
+                source_code,
+                problem_id,
+                score,
+                user_id,
+                contest_id,
+                weird_percent,
+                similarity_percent
+            FROM submissi
+            WHERE user_id = ? AND score = 100 AND problem_id = ? AND contest_id = ?
+            ORDER BY time_stamp DESC
+        """, (elev.id, problem_id, contest_id))
+    else:
+        cursor.execute("""
+            SELECT
+                kn_submission_id,
+                time_stamp,
+                source_code,
+                problem_id,
+                score,
+                user_id,
+                contest_id,
+                weird_percent,
+                similarity_percent
+            FROM submissi
+            WHERE user_id = ? AND score = 100 AND problem_id = ? AND contest_id = ?
+            ORDER BY time_stamp DESC
+            LIMIT ?
+        """, (elev.id, problem_id, contest_id, count))
 
     rows = cursor.fetchall()
     conn.close()
