@@ -102,12 +102,69 @@ class ButonAddClasa(ft.Button):
         self.on_click = self.add_clasa
         self.back_route = back_route
 
+    
+
     def add_clasa(self, e):
         self._page.clean()
         self._page.title = "Adăugare clasă"
+
+        def push_clasa_noua(self):
+            return
+
+        dropdown_nivel = ft.Dropdown(
+            options=[
+                ft.DropdownOption(key=5, text="5"),
+                ft.DropdownOption(key=6, text="6"),
+                ft.DropdownOption(key=7, text="7"),
+                ft.DropdownOption(key=8, text="8"),
+                ft.DropdownOption(key=9, text="9"),
+                ft.DropdownOption(key=10, text="10"),
+                ft.DropdownOption(key=11, text="11"),
+                ft.DropdownOption(key=12, text="12"),
+            ],
+            text_align=ft.TextAlign.CENTER, # de ce nu arata centrat totusi in ui???????
+            border_color=ft.Colors.BLUE_GREY_100,
+            text_size=18,
+            width=150
+        )
+        nume_clasa = ft.TextField(text_align=ft.TextAlign.CENTER, text_size=18, border_color=ft.Colors.BLUE_GREY_100, width=150)
+
         self._page.add(
             ft.Row(
                 ButonBack(dest=self.back_route)
+            ),
+            ft.Container(
+                content=ft.Row(
+                controls=[
+                    ft.Text("Adăugare clasă", size=38, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_100),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                ),
+            padding=20
+            ),
+            
+            ft.Column(
+                controls=[
+                    ft.Row(
+                        controls=[
+                            ft.Text("Nivel clasă", size=26, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_100, width=150),
+                            dropdown_nivel
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+                    ft.Row(
+                        controls=[
+                            ft.Text("Nume clasă", size=26, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_100, width=150),
+                            nume_clasa
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+            ]
+        ),
+        ft.Row(
+            controls=[
+                ft.ElevatedButton(content=ft.Text("Adaugă Clasă", color=ft.Colors.BLUE_GREY_100, size=16), width=150, height=50, on_click=push_clasa_noua)],
+                alignment=ft.MainAxisAlignment.CENTER
             )
         )
         self._page.update()
@@ -179,6 +236,14 @@ class ButonAddElev(ft.Button):
 
         self._page.add(
             ButonBack(self.back_route),
+            ft.Container(
+                content=ft.Row(
+                controls=[
+                    ft.Text("Adăugare elev", size=38, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_100),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            padding=20),
             ft.Column(
                 controls=[
                     ft.Row(
