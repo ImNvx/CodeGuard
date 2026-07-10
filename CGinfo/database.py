@@ -285,7 +285,7 @@ def get_submissions_of_contest(contest_id: int):
         FROM submissi
         WHERE contest_id = ?
         ORDER BY time_stamp DESC
-    """, (contest_idid,))
+    """, (contest_id,))
 
     rows = cursor.fetchall()
     row = rows[0]
