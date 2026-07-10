@@ -21,6 +21,7 @@ class ButonBack(ft.IconButton):
             size=30
         )
         self.width = 60
+        self.height = 45
         self.on_click = lambda e : dest()
 
 class ButonElev(ft.Button):
@@ -54,7 +55,17 @@ class ButonClasa(ft.Button):
 
         self._page.add(
             ft.Row(
-                ButonBack(dest=self.back_route)
+                controls=[ButonBack(dest=self.back_route),
+                         ContestButton(self._page, back_route=self.back_route)],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                expand=True
+            ),
+            ft.Row(
+                ft.Text(f"Clasa {self.clasa.nivel}{self.clasa.nume}", size=38, weight='bold'),
+                alignment=ft.MainAxisAlignment.CENTER
+            ),
+            ft.Row(
+                height=20 # pentru design
             )
         )
         
@@ -108,9 +119,6 @@ class ButonAddClasa(ft.Button):
         self._page.clean()
         self._page.title = "Adăugare clasă"
 
-        def push_clasa_noua(self):
-            return
-
         dropdown_nivel = ft.Dropdown(
             options=[
                 ft.DropdownOption(key=5, text="5"),
@@ -128,6 +136,38 @@ class ButonAddClasa(ft.Button):
             width=150
         )
         nume_clasa = ft.TextField(text_align=ft.TextAlign.CENTER, text_size=18, border_color=ft.Colors.BLUE_GREY_100, width=150)
+
+        def push_clasa_noua(e):
+            db = TinyDB('CGinfo/db_clase.json')
+
+            if dropdown_nivel.value != None and nume_clasa.value != '': # fac check ca sa nu fie empty field-urile
+                    clasa = Clasa(int(dropdown_nivel.value), nume_clasa.value)
+                    db.insert(Clasa.to_dict(clasa))
+                    print(Clasa.to_dict(clasa))
+
+                    self._page.show_dialog(ft.SnackBar(
+                    content=ft.Row(
+                        controls=[
+                        ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                        ft.Text("Clasă adăugată cu succes!", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        ),
+                    duration=3000,
+                    bgcolor=ft.Colors.TEAL_600
+                    ))
+                    self._page.update()
+            else:
+                self._page.show_dialog(ft.SnackBar(
+                    content=ft.Row(
+                        controls=[
+                        ft.Icon(ft.Icons.WARNING_AMBER_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                        ft.Text("Valori invalide", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        ),
+                    duration=3000,
+                    bgcolor=ft.Colors.RED_900
+                    ))
+                self._page.update()
 
         self._page.add(
             ft.Row(
@@ -172,10 +212,10 @@ class ButonAddClasa(ft.Button):
 
 class ButonAddElev(ft.Button):
     def __init__(self, page : ft.Page, clasa, back_route):
-        super().__init__(content=ft.Text("Adaugă un elev", size=15, text_align=ft.TextAlign.CENTER),)
+        super().__init__(content=ft.Text("Adaugă un elev", size=17, text_align=ft.TextAlign.CENTER),)
         
         self._page = page
-        self.bgcolor = ft.Colors.TEAL_200
+        self.bgcolor = ft.Colors.TEAL_ACCENT_400
         self.color = ft.Colors.BLACK
         self.width = 200
         self.height = 50
@@ -224,7 +264,7 @@ class ButonAddElev(ft.Button):
                 self._page.show_dialog(ft.SnackBar(
                     content=ft.Row(
                         controls=[
-                        ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                        ft.Icon(ft.Icons.WARNING_AMBER_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
                         ft.Text("Eroare, clasa nu există în baza de date sau ceva a mers rău", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)],
                         alignment=ft.MainAxisAlignment.CENTER,
                         ),
@@ -277,12 +317,15 @@ class ButonAddElev(ft.Button):
 # !!!! neaparat sa fac elementele sa isi dea resize in functie de window size, probabil ca event 
 # pe window resize si sa fie un procent din size-ul curent sau ceva multiplier in functie de size
 class MainPage():
-    def __init__(self, page : ft.Page, clase):
+    def __init__(self, page : ft.Page):
         self._page = page
-        self.clase = clase
-        self.class_buttons = [ButonClasa(clasa=i, page=self._page, back_route=self.loadPage) for i in self.clase]
+        self.db = TinyDB('CGinfo/db_clase.json')
         
     def loadPage(self):
+        self.clase = [Clasa(**i) for i in self.db.all()]
+        self.clase.sort(key=lambda k : (k.nivel, k.nume))
+        self.class_buttons = [ButonClasa(clasa=i, page=self._page, back_route=self.loadPage) for i in self.clase]
+
         self._page.clean()
         self._page.title = "CGinfo"
         self._page.vertical_alignment = ft.MainAxisAlignment.START
@@ -304,11 +347,6 @@ class MainPage():
                     padding=20,
                 ),
                 
-                ft.Container(
-                    content=ContestButton(self._page, back_route=self.loadPage),
-                    alignment=ft.Alignment.TOP_RIGHT,
-                    padding=15
-                )
             ],
             height=200
         ),
@@ -331,15 +369,15 @@ class MainPage():
     
 class ContestButton(ft.Button):
     def __init__(self, page : ft.Page, back_route):
-        super().__init__(content=ft.Row(controls=[ft.Text("Contest nou", size=32, weight='bold', text_align=ft.TextAlign.CENTER),
-                                 ft.Icon(ft.Icons.PLAY_ARROW_ROUNDED, size=80)])) # prea multe paranteze haha
+        super().__init__(content=ft.Row(controls=[ft.Text("Contest nou", size=24, weight='bold', text_align=ft.TextAlign.CENTER),
+                                 ft.Icon(ft.Icons.PLAY_ARROW_ROUNDED, size=55)], alignment=ft.MainAxisAlignment.CENTER, spacing=-2)) # prea multe paranteze haha
         self._page = page
         self.back_route = back_route
 
         self.bgcolor = ft.Colors.TEAL_ACCENT_100
         self.color = ft.Colors.BLUE_GREY_900
-        self.width = 300
-        self.height = 80
+        self.width = 220
+        self.height = 60
         self.style = ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=18)
         )
