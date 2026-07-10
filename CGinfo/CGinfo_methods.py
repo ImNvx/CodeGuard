@@ -56,7 +56,7 @@ class ButonClasa(ft.Button):
         self._page.add(
             ft.Row(
                 controls=[ButonBack(dest=self.back_route),
-                         ContestButton(self._page, back_route=self.back_route)],
+                         ft.Row(controls=[ContestHistoryButton(page=self._page, back_route=self.back_route), ContestButton(self._page, back_route=self.back_route)])],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 expand=True
             ),
@@ -242,24 +242,37 @@ class ButonAddElev(ft.Button):
 
             res = db.get((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume))
             if res: # am adaugat checking ca sa aiba sens mesajul de succes :))
-                elev = Elev(nume=tb_nume.value, kn_user=tb_kn_user.value, id=get_kn_id(tb_kn_user.value))
-
-                res['elevi'].append(elev.to_dict())
-                db.update(
-                    {"elevi": res['elevi']},
-                    (q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume)
-                )
-                self._page.show_dialog(ft.SnackBar(
+                if tb_nume.value == '' or tb_kn_user.value == '':
+                    self._page.show_dialog(ft.SnackBar(
                     content=ft.Row(
                         controls=[
-                        ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
-                        ft.Text("Elev adăugat cu succes!", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)],
+                        ft.Icon(ft.Icons.WARNING_AMBER_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                        ft.Text("Valori invalide", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)],
                         alignment=ft.MainAxisAlignment.CENTER,
                         ),
                     duration=3000,
-                    bgcolor=ft.Colors.TEAL_600
+                    bgcolor=ft.Colors.RED_900
                 ))
-                self._page.update()
+                    
+                else:
+                    elev = Elev(nume=tb_nume.value, kn_user=tb_kn_user.value, id=get_kn_id(tb_kn_user.value))
+
+                    res['elevi'].append(elev.to_dict())
+                    db.update(
+                        {"elevi": res['elevi']},
+                        (q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume)
+                    )
+                    self._page.show_dialog(ft.SnackBar(
+                        content=ft.Row(
+                            controls=[
+                            ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                            ft.Text("Elev adăugat cu succes!", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)],
+                            alignment=ft.MainAxisAlignment.CENTER,
+                            ),
+                        duration=3000,
+                        bgcolor=ft.Colors.TEAL_600
+                    ))
+                    self._page.update()
             else:
                 self._page.show_dialog(ft.SnackBar(
                     content=ft.Row(
@@ -362,7 +375,7 @@ class MainPage():
             )
         self._page.add(
             ft.Row(
-                controls=[ButonAddClasa(page=self._page, back_route=self.loadPage), ContestHistoryButton(page=self._page, back_route=self.loadPage)],
+                controls=[ButonAddClasa(page=self._page, back_route=self.loadPage)],
                 alignment=ft.MainAxisAlignment.CENTER,
             )
         )
