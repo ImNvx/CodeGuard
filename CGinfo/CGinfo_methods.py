@@ -22,7 +22,7 @@ class ButonBack(ft.IconButton):
         )
         self.width = 60
         self.height = 45
-        self.on_click = lambda e : dest()
+        self.on_click = dest
 
 class ButonElev(ft.Button):
     def __init__(self, nume):
@@ -88,7 +88,7 @@ class ButonClasa(ft.Button):
         # adaugare lista cu elevii aici pe linia asta
         self._page.add(
             ft.Row(
-                controls=[ButonAddElev(page = self._page, clasa=self.clasa, back_route=self.back_route)],
+                controls=[ButonAddElev(page = self._page, clasa=self.clasa, back_route=self.class_selection)],
                 alignment=ft.MainAxisAlignment.CENTER,
             )
         )
@@ -397,20 +397,23 @@ class ContestButton(ft.Button):
         self.on_click = self.contest_creation
 
     def contest_creation(self):
+        self._page.clean()
+        
+
         return
 
 class ContestHistoryButton(ft.IconButton):
     def __init__(self, page : ft.Page, back_route):
-        super().__init__(icon=ft.Icons.HISTORY_ROUNDED, icon_size=35)
+        super().__init__(icon=ft.Icons.HISTORY_ROUNDED, icon_size=40)
         self._page = page
         self.back_route = back_route
 
         self.bgcolor = "#3A3A4A"
         self.color = ft.Colors.BLUE_GREY_100
-        self.width = 50
-        self.height = 50
+        self.width = 60
+        self.height = 60
         self.style = ft.ButtonStyle(
-            shape=ft.RoundedRectangleBorder(radius=15)
+            shape=ft.RoundedRectangleBorder(radius=18)
         )
 
     def contest_history(self):
