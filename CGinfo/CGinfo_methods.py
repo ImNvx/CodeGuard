@@ -4,9 +4,23 @@ import sqlite3
 import random # !!! doar pentru dev testing
 from CGinfo.kn import get_kn_id
 from CGinfo.CGinfo_ds import *
+import os
+from pathlib import Path
+import sys
 
 def get_elev_submissions(kn_user): #returneaza toate submisiile unui elev din db
     return "int main()"
+
+def get_base_dir():
+    if getattr(sys, 'frozen', False):
+        return Path(sys.executable).parent
+    else:
+        return Path(__file__).resolve().parent
+
+def get_db():
+    exe_path = get_base_dir()
+    path = exe_path / 'db_clase.json'
+    return TinyDB(path)
 
 class ButonBack(ft.IconButton):
     def __init__(self, dest):
@@ -69,7 +83,7 @@ class ButonClasa(ft.Button):
             )
         )
         
-        db = TinyDB("CGinfo/db_clase.json")
+        db = get_db()
         q = Query()
         res = db.search((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume)) # aceste 2 conditii ar trebui sa fie suficiente parerea mea
         
@@ -138,7 +152,7 @@ class ButonAddClasa(ft.Button):
         nume_clasa = ft.TextField(text_align=ft.TextAlign.CENTER, text_size=18, border_color=ft.Colors.BLUE_GREY_100, width=150)
 
         def push_clasa_noua(e):
-            db = TinyDB('CGinfo/db_clase.json')
+            db = get_db()
 
             if dropdown_nivel.value != None and nume_clasa.value != '': # fac check ca sa nu fie empty field-urile
                     clasa = Clasa(int(dropdown_nivel.value), nume_clasa.value)
@@ -237,7 +251,7 @@ class ButonAddElev(ft.Button):
         tb_kn_user = ft.TextField(text_align=ft.TextAlign.CENTER, text_size=18, border_color=ft.Colors.BLUE_GREY_100)
 
         def push_elev_nou(e):
-            db = TinyDB("CGinfo/db_clase.json")
+            db = get_db()
             q = Query()
 
             res = db.get((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume))
@@ -332,7 +346,7 @@ class ButonAddElev(ft.Button):
 class MainPage():
     def __init__(self, page : ft.Page):
         self._page = page
-        self.db = TinyDB('CGinfo/db_clase.json')
+        self.db = get_db()
         
     def loadPage(self):
         self.clase = [Clasa(**i) for i in self.db.all()]
