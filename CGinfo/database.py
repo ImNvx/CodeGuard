@@ -413,15 +413,15 @@ def update_contest_fetched(contest_id: int, value: bool, db_path=DB_NAME):
     conn.commit()
     conn.close()
 
-def update_submission_similarity(submission_id: int, value: float, db_path=DB_NAME):
+def update_submission_similarity(submission_id: int, contest_id : int, value: float, db_path=DB_NAME):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
     cursor.execute("""
         UPDATE submissi
         SET similarity_percent = ?
-        WHERE id = ?
-    """, (value, submission_id))
+        WHERE kn_submission_id = ? AND contest_id = ?
+    """, (value, submission_id, contest_id))
 
     conn.commit()
     conn.close()

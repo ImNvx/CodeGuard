@@ -24,6 +24,7 @@ from threading import Thread
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from AI.CodeGuard_AI import CodeGuard # trebuie mutat pe alt thread
+from API.CodeGuard_Similarity import get_similarity_2
 import time
 from tinydb import TinyDB, Query
 import asyncio
@@ -153,6 +154,21 @@ def end_contest(strat_time : int, end_time : int, clasa : Clasa, probleme : list
         for problema in probleme:
             batch_self = get_batch_for_jaccard_self(elev, problema, contest_id, CONTEXT_LENGTH)
             batch_other = get_batch_for_jaccard_other(elev, problema, contest_id, CONTEXT_LENGTH)
+
+            self_text = []
+            for submission in batch_self:
+                self_text.append(submission.content)
+
+            other_text = []
+            for submission in batch_other:
+                other_text.append(submission.content)
+
+            similarity_percent = get_similarity_2(other_text , self_text)
+
+            for i in range(len(batch_self)):
+                submission = batch_self[i]
+                sim = similarity_percent[i]
+                update_submission_similarity(submission.id, submission.contest_id, sim)
             
 
 def get_time():
@@ -168,11 +184,7 @@ async def start_contest_handler():
             update_contest_fetched(contest.id , True)
         await asyncio.sleep(0.5) # pare ok cu 0.5 dar cred ca merge si cu 1
 
-### !!!!!!!!!!! ceva e putred cu timpu pe kn cred ca ii UTC+2 sau ceva
-
 if __name__ == "__main__":
-    #print(get_submissions_from_db(1007904).content)
-    #exit()
     initialize_database()
     if(False):
         contest_id = add_contest(
@@ -200,9 +212,5 @@ if __name__ == "__main__":
         "problem_list_id": None,
         "contest_id": None,
     }
-    r = requests.get("https://kilonova.ro/api/submissions/get", headers = headers, json = payload)
+    t("https://kilonova.ro/api/submissions/get", headers = headers, json = payload)
     print(json.loads(r.text))
-
-'''
-nu am test start_contest_handler si mai nimic de la contesturi, nici partea cu AI
-'''
