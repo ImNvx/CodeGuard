@@ -29,6 +29,10 @@ import time
 from tinydb import TinyDB, Query
 import asyncio
 
+import sys # pentru get_clasa
+from pathlib import Path # pentru get_clasa
+
+
 guard = CodeGuard() # initalizam AI-ul - trebuie mutat pe alt thread
 
 headers = {
@@ -51,12 +55,26 @@ headers = {
 CONTEXT_LENGTH = 10 # cate submisi ne intereseaza
 KN_LIMIT = 20 #cate submisii furam o data(punem 20 ca suntem baieti)
 
+
+# ----- get_clasa -----
+def get_base_dir():
+    if getattr(sys, 'frozen', False):
+        return Path(sys.executable).parent
+    else:
+        return Path(__file__).resolve().parent
+
+def get_db_tinydb():
+    exe_path = get_base_dir()
+    path = exe_path / 'db_clase.json'
+    return TinyDB(path)
+
 def get_clasa(nivel : int, nume : str):
-    db = TinyDB("db_clase.json")
+    db = get_db_tinydb()
     q = Query()
     res = db.search((q.nivel == nivel) & (q.nume == nume))
     if res:
         return Clasa(**res[0])
+# ----- get_clasa -----
 
 def get_kn_id(user : str): #returneaza un int, idul userurlui daca acest user exista, sau -1 daca intampina vreo eroare
     try:

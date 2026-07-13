@@ -73,7 +73,7 @@ class ButonClasa(ft.Button):
         self._page.add(
             ft.Row(
                 controls=[ButonBack(dest=self.back_route),
-                         ft.Row(controls=[ContestHistoryButton(page=self._page, back_route=self.back_route), ContestButton(self._page, clasa=self.clasa, back_route=self.class_selection)])],
+                         ft.Row(controls=[ContestHistoryButton(page=self._page, clasa=self.clasa, back_route=self.back_route), ContestButton(self._page, clasa=self.clasa, back_route=self.class_selection)])],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 expand=True
             ),
@@ -259,7 +259,7 @@ class ButonAddElev(ft.Button):
 
             res = db.get((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume))
             if res: # am adaugat checking ca sa aiba sens mesajul de succes :))
-                if tb_nume.value == '' or tb_kn_user.value == '':
+                if tb_nume.value == '' or tb_kn_user.value == '' or (get_kn_id(tb_kn_user.value) == -1):
                     self._page.show_dialog(ft.SnackBar(
                     content=ft.Row(
                         controls=[
@@ -449,6 +449,18 @@ class ContestButton(ft.Button):
             on_change=set_end_time_text
         )
 
+        def push_contest_to_elev_db(id):
+            db = get_db()
+            q = Query()
+
+            res = db.get((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume))
+
+            res['contest_ids'].append(id)
+            db.update(
+                {"contest_ids": res['contest_ids']},
+                (q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume)
+            )
+
         def finish_contest(e):
             if nume_concurs.value == '' or lista_probleme.value == '' or ((60 * end_time.value.hour + end_time.value.minute) - (60 * start_time.value.hour + start_time.value.minute) < 0):
                 self._page.show_dialog(ft.SnackBar(
@@ -481,6 +493,7 @@ class ContestButton(ft.Button):
                     lista_probleme=id_probleme
                 )
                 if id_contest:
+                     push_contest_to_elev_db(id_contest)
                      self._page.show_dialog(ft.SnackBar(
                         content=ft.Row(
                             controls=[
@@ -557,9 +570,10 @@ class ContestButton(ft.Button):
         return
 
 class ContestHistoryButton(ft.IconButton):
-    def __init__(self, page : ft.Page, back_route):
+    def __init__(self, page : ft.Page, clasa : Clasa, back_route):
         super().__init__(icon=ft.Icons.HISTORY_ROUNDED, icon_size=40)
         self._page = page
+        self.clasa = clasa
         self.back_route = back_route
 
         self.bgcolor = "#3A3A4A"
@@ -569,8 +583,29 @@ class ContestHistoryButton(ft.IconButton):
         self.style = ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=18)
         )
+        self.on_click = self.contest_history
+
+    def get_contests(self):
+        all_contests = CGinfo.database.get_all_contests()
+        contests = []
+
+        ids = []
+        db = get_db()
+        q = Query()
+
+        res = db.get((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume))
+        ids = res['contest_ids']
+
+        for i in all_contests:
+            if i.id in ids:
+                contests.append(i)
+        print(contests)
 
     def contest_history(self):
+        self._page.clean()
+        self.get_contests()
+
+
         return
 
 ###de aici in jos mi am bagat eu mainile - mester

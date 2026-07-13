@@ -1,16 +1,18 @@
 class Clasa:
-    def __init__(self, nivel=9, nume="A", nr_elevi=0, elevi=[]):
+    def __init__(self, nivel=9, nume="A", nr_elevi=0, elevi=[], contest_ids=[]):
         self.nivel = nivel
         self.nume = nume
         self.nr_elevi = nr_elevi
         self.elevi = elevi
+        self.contest_ids = []
 
     def to_dict(x):
         return {
             "nivel" : x.nivel,
             "nume" : x.nume,
             "nr_elevi" : x.nr_elevi,
-            "elevi" : x.elevi
+            "elevi" : x.elevi,
+            "contest_ids" : x.contest_ids
         }
 
 class Elev:
