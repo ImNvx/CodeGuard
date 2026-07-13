@@ -7,6 +7,9 @@ from CGinfo.CGinfo_ds import *
 import os
 from pathlib import Path
 import sys
+import datetime
+import CGinfo.database
+import re
 
 def get_elev_submissions(kn_user): #returneaza toate submisiile unui elev din db
     return "int main()"
@@ -70,7 +73,7 @@ class ButonClasa(ft.Button):
         self._page.add(
             ft.Row(
                 controls=[ButonBack(dest=self.back_route),
-                         ft.Row(controls=[ContestHistoryButton(page=self._page, back_route=self.back_route), ContestButton(self._page, back_route=self.back_route)])],
+                         ft.Row(controls=[ContestHistoryButton(page=self._page, back_route=self.back_route), ContestButton(self._page, clasa=self.clasa, back_route=self.class_selection)])],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 expand=True
             ),
@@ -395,10 +398,11 @@ class MainPage():
         )
     
 class ContestButton(ft.Button):
-    def __init__(self, page : ft.Page, back_route):
+    def __init__(self, page : ft.Page, clasa : Clasa, back_route):
         super().__init__(content=ft.Row(controls=[ft.Text("Contest nou", size=24, weight='bold', text_align=ft.TextAlign.CENTER),
                                  ft.Icon(ft.Icons.PLAY_ARROW_ROUNDED, size=55)], alignment=ft.MainAxisAlignment.CENTER, spacing=-2)) # prea multe paranteze haha
         self._page = page
+        self.clasa = clasa
         self.back_route = back_route
 
         self.bgcolor = ft.Colors.TEAL_ACCENT_100
@@ -412,7 +416,143 @@ class ContestButton(ft.Button):
 
     def contest_creation(self):
         self._page.clean()
-        
+        self._page.title = "Contest nou"
+
+        # banuiesc ca nu da nimeni concurs de la 11 noaptea pana urmatoarea zi, deci sper ca nu o sa fie probleme cu timpul daca il pun ca incepand azi si terminandu-se tot azi :/
+
+        nume_concurs = ft.TextField(text_align=ft.TextAlign.CENTER, text_size=18, border_color=ft.Colors.BLUE_GREY_100)
+        lista_probleme = ft.TextField(text_align=ft.TextAlign.CENTER, text_size=18, border_color=ft.Colors.BLUE_GREY_100, hint_text='ex: 4423, 4424, 4225')
+        text_start_time = ft.TextField(f"{datetime.datetime.now().hour:02}:{datetime.datetime.now().minute:02}", text_align=ft.TextAlign.CENTER, text_size=18, border_color=ft.Colors.BLUE_GREY_100, read_only=True, width=150)
+        text_end_time = ft.TextField(f"{datetime.datetime.now().hour:02}:{datetime.datetime.now().minute:02}", text_align=ft.TextAlign.CENTER, text_size=18, border_color=ft.Colors.BLUE_GREY_100, read_only=True, width=150)
+
+        def set_start_time_text(e):
+            text_start_time.value = f"{start_time.value.hour:02}:{start_time.value.minute:02}"
+            self._page.update()
+
+        def change_start_time(e):
+            self._page.show_dialog(start_time)
+
+        def set_end_time_text(e):
+            text_end_time.value = f"{end_time.value.hour:02}:{end_time.value.minute:02}"
+            self._page.update()
+
+        def change_end_time(e):
+            self._page.show_dialog(end_time)
+
+        start_time = ft.TimePicker(
+            hour_format=ft.TimePickerHourFormat.H24,
+            on_change=set_start_time_text
+        )
+
+        end_time = ft.TimePicker(
+            hour_format=ft.TimePickerHourFormat.H24,
+            on_change=set_end_time_text
+        )
+
+        def finish_contest(e):
+            if nume_concurs.value == '' or lista_probleme.value == '' or ((60 * end_time.value.hour + end_time.value.minute) - (60 * start_time.value.hour + start_time.value.minute) < 0):
+                self._page.show_dialog(ft.SnackBar(
+                    content=ft.Row(
+                        controls=[
+                        ft.Icon(ft.Icons.WARNING_AMBER_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                        ft.Text("Valori invalide", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        ),
+                    duration=3000,
+                    bgcolor=ft.Colors.RED_900
+                ))
+                self._page.update()
+            else:
+                id_probleme = re.split(r'[;,\s]+', lista_probleme.value)
+
+                t_start = datetime.datetime.now().replace(hour=start_time.value.hour, minute=start_time.value.minute) # din nou, sper ca nu incepe nimeni concurs la 11:59:59 noaptea
+
+                t_end = t_start.replace(hour=end_time.value.hour, minute=end_time.value.minute)
+
+                t_start_unix = int(t_start.timestamp() * 1000) 
+                t_end_unix = int(t_end.timestamp() * 1000)
+
+                id_contest = CGinfo.database.add_contest(
+                    name=nume_concurs.value,
+                    start_time=t_start_unix,
+                    end_time=t_end_unix,
+                    nume_clasa=self.clasa.nume,
+                    nivel_clasa=self.clasa.nivel,
+                    lista_probleme=id_probleme
+                )
+                if id_contest:
+                     self._page.show_dialog(ft.SnackBar(
+                        content=ft.Row(
+                            controls=[
+                            ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                            ft.Text("Contest creat cu succes!", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)],
+                            alignment=ft.MainAxisAlignment.CENTER,
+                            ),
+                        duration=3000,
+                        bgcolor=ft.Colors.TEAL_600
+                        ))
+                     self._page.update()
+
+
+        self._page.add(
+            ft.Row(
+                ButonBack(dest=self.back_route),
+            ),
+            ft.Row(
+                ft.Text("Contest nou", size=38, weight='bold'),
+                alignment=ft.MainAxisAlignment.CENTER
+            ),
+            ft.Row(
+                height=20
+            ),
+
+            ft.Column(
+                controls=[
+                    ft.Row(
+                        controls=[
+                            ft.Text("Nume concurs", size=24, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_100, width=250),
+                            nume_concurs
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+                    ft.Row(
+                        controls=[
+                            ft.Text("Listă id-uri probleme", size=24, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_100, width=250),
+                            lista_probleme
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+                    ft.Row(
+                        height=30
+                    ),
+                    ft.Row(
+                        controls=[
+                            ft.Text("Ora de start:   ", size=24, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_100), # pixel de ceee
+                            text_start_time,
+                            ft.ElevatedButton("Schimbă", on_click=change_start_time),
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+                    ft.Row(
+                        controls=[
+                            ft.Text("Ora de sfârșit: ", size=24, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_100),
+                            text_end_time,
+                            ft.ElevatedButton("Schimbă", on_click=change_end_time),
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+                    ft.Row(
+                        height=25
+                    ),
+                    ft.Row(
+                        controls=[
+                            ft.ElevatedButton(content=ft.Text("Start contest", size=18, text_align=ft.TextAlign.CENTER), width=200, height=50, icon=ft.Icons.PLAY_ARROW_ROUNDED, on_click=finish_contest)
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    )
+                ],
+            )
+        )
 
         return
 

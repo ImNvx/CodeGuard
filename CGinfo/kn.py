@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 from AI.CodeGuard_AI import CodeGuard # trebuie mutat pe alt thread
 import time
 from tinydb import TinyDB, Query
+import asyncio
 
 guard = CodeGuard() # initalizam AI-ul - trebuie mutat pe alt thread
 
@@ -158,13 +159,14 @@ def get_time():
     t = int(time.time() * 1000) # ne trb in ms
     return t
 
-def start_contest_handler():
+async def start_contest_handler():
     while True:
         contests = get_unfetched_finished_contests(get_time())
         for contest in contests:
             clasa = get_clasa(contest.nivel_clasa, contest.nume_clasa)
             end_contest(contest.start_time, contest.end_time, clasa, contest.lista_probleme, contest.id)
             update_contest_fetched(contest.id , True)
+        await asyncio.sleep(0.5) # pare ok cu 0.5 dar cred ca merge si cu 1
 
 ### !!!!!!!!!!! ceva e putred cu timpu pe kn cred ca ii UTC+2 sau ceva
 
