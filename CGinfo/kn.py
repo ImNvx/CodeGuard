@@ -72,7 +72,10 @@ def get_clasa(nivel : int, nume : str):
     db = get_db_tinydb()
     q = Query()
     res = db.search((q.nivel == nivel) & (q.nume == nume))
+
     if res:
+        f = res[0]
+        f['elevi'] = [Elev(**i) for i in f['elevi']]
         return Clasa(**res[0])
 # ----- get_clasa -----
 

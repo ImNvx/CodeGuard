@@ -4,7 +4,7 @@ class Clasa:
         self.nume = nume
         self.nr_elevi = nr_elevi
         self.elevi = elevi
-        self.contest_ids = []
+        self.contest_ids = contest_ids
 
     def to_dict(x):
         return {
