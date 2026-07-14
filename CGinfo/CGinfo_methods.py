@@ -25,6 +25,9 @@ def get_db():
     path = exe_path / 'db_clase.json'
     return TinyDB(path)
 
+def get_unix_now():
+    return datetime.datetime.now().timestamp() * 1000
+
 class ButonBack(ft.IconButton):
     def __init__(self, dest):
         super().__init__()
@@ -73,7 +76,7 @@ class ButonClasa(ft.Button):
         self._page.add(
             ft.Row(
                 controls=[ButonBack(dest=self.back_route),
-                         ft.Row(controls=[ContestHistoryButton(page=self._page, clasa=self.clasa, back_route=self.back_route), ContestButton(self._page, clasa=self.clasa, back_route=self.class_selection)])],
+                         ft.Row(controls=[ContestHistoryButton(page=self._page, clasa=self.clasa, back_route=self.class_selection), NewContestButton(self._page, clasa=self.clasa, back_route=self.class_selection)])],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 expand=True
             ),
@@ -397,7 +400,7 @@ class MainPage():
             )
         )
     
-class ContestButton(ft.Button):
+class NewContestButton(ft.Button):
     def __init__(self, page : ft.Page, clasa : Clasa, back_route):
         super().__init__(content=ft.Row(controls=[ft.Text("Contest nou", size=24, weight='bold', text_align=ft.TextAlign.CENTER),
                                  ft.Icon(ft.Icons.PLAY_ARROW_ROUNDED, size=55)], alignment=ft.MainAxisAlignment.CENTER, spacing=-2)) # prea multe paranteze haha
@@ -569,6 +572,28 @@ class ContestButton(ft.Button):
 
         return
 
+class ContestButton(ft.Button):
+    def __init__(self, page : ft.Page, contest_id : int, is_running : bool, properties : Contest, back_route):
+        super().__init__(content=ft.Text(f"Contest #{contest_id}", size=45))
+        
+        self._page = page
+        self.contest_id = contest_id
+        self.properties = properties
+
+        if is_running:
+            self.bgcolor = ft.Colors.GREEN_ACCENT_400
+            self.color = ft.Colors.BLACK
+        else:
+            self.bgcolor = ft.Colors.BLUE_GREY_200
+            self.color = ft.Colors.BLACK
+        
+        self.width = 300
+        self.height = 120
+        self.style = ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=12)
+        )
+        self.back_route = back_route
+
 class ContestHistoryButton(ft.IconButton):
     def __init__(self, page : ft.Page, clasa : Clasa, back_route):
         super().__init__(icon=ft.Icons.HISTORY_ROUNDED, icon_size=40)
@@ -585,7 +610,7 @@ class ContestHistoryButton(ft.IconButton):
         )
         self.on_click = self.contest_history
 
-    def get_contests(self):
+    def get_contests_ids(self):
         all_contests = CGinfo.database.get_all_contests()
         contests = []
 
@@ -599,13 +624,47 @@ class ContestHistoryButton(ft.IconButton):
         for i in all_contests:
             if i.id in ids:
                 contests.append(i)
-        print(contests)
+
+        return contests
+    
+    
 
     def contest_history(self):
         self._page.clean()
-        self.get_contests()
+        self._page.title = f"Istoric contest clasa {self.clasa.nivel}{self.clasa.nume}"
+        contest_ids = self.get_contests_ids()
 
+        self._page.add(
+            ButonBack(self.back_route),
+            ft.Container(
+                content=ft.Row(
+                controls=[
+                    ft.Text("Istoric concursuri", size=38, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_100),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            padding=20),
+        )
 
+        def contest_is_running(current_time, end_time) -> bool:
+            return (end_time - current_time) > 0
+        
+        contest_buttons = []
+        for i in contest_ids:
+            contest_buttons.append(ContestButton(page=self._page, contest_id=i.id, is_running=contest_is_running(get_unix_now(), i.end_time), properties=i, back_route=self.contest_history))
+
+        contest_buttons.sort(key= lambda k : k.properties.end_time, reverse=True)
+
+        for i in range(0, len(contest_ids), 3):
+            self._page.add(
+                ft.Row(
+                    controls=contest_buttons[i:i+3],
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    spacing=25
+                )
+            )
+
+        self._page.update()
         return
 
 ###de aici in jos mi am bagat eu mainile - mester
