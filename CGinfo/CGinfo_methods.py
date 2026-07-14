@@ -572,9 +572,42 @@ class NewContestButton(ft.Button):
 
         return
 
+def get_date_from_unix(ts):
+    return datetime.datetime.fromtimestamp(ts / 1000)
+
 class ContestButton(ft.Button):
     def __init__(self, page : ft.Page, contest_id : int, is_running : bool, properties : Contest, back_route):
-        super().__init__(content=ft.Text(f"Contest #{contest_id}", size=45))
+        ts_start = get_date_from_unix(properties.start_time)
+        ts_end = get_date_from_unix(properties.end_time)
+
+        #submissions = CGinfo.database.get_submissions_of_contest(properties.id)
+        submissions = 0
+        correct_submissions = 0
+        #for i in submissions:
+        #    if i.score == 100:
+        #       correct_submissions += 1
+
+        super().__init__(content=
+                         ft.Column(controls=[
+                             ft.Row(
+                                 controls=[ft.Text(f"{ts_start.strftime('%m/%d/%y')} {ts_start.strftime('%H:%M')} -> {ts_end.strftime('%H:%M')}", size=18),
+                                ],
+                                alignment=ft.MainAxisAlignment.CENTER
+                             ),
+                             ft.Row(controls=[
+                                  ft.Text(f"Contest #{contest_id}", size=45),
+                             ],
+                             alignment=ft.MainAxisAlignment.CENTER
+                            ),
+                            ft.Row(
+                                controls=[
+                                    ft.Text(f"Număr submisii: {correct_submissions}", text_align=ft.TextAlign.LEFT, size=14), # len(submissions)
+                                    ft.Text(f"Submisii corecte: {correct_submissions}", text_align=ft.TextAlign.RIGHT, size=14)
+                                ],
+                                alignment=ft.MainAxisAlignment.CENTER
+                            )
+                         ],
+                         spacing=2))
         
         self._page = page
         self.contest_id = contest_id
