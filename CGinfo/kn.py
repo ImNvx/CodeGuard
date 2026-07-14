@@ -88,7 +88,7 @@ def get_kn_id(user : str): #returneaza un int, idul userurlui daca acest user ex
 
         return int(data['data']['id'])
     except Exception as e:
-        print(e)
+        print("eroare la get_kn_id() : ", e)
         return -1
 
 def kn_get_submission(submission : int): # submission id
@@ -185,6 +185,7 @@ def end_contest(strat_time : int, end_time : int, clasa : Clasa, probleme : list
                 other_text.append(submission.content)
 
             similarity_percent = get_similarity_2(other_text , self_text)
+            similarity_percent = round(similarity_percent, 2)
 
             for i in range(len(batch_self)):
                 submission = batch_self[i]
