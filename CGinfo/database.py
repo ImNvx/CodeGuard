@@ -288,22 +288,28 @@ def get_submissions_of_contest(contest_id: int):
     """, (contest_id,))
 
     rows = cursor.fetchall()
-    row = rows[0]
     conn.close()
 
-    submission = Submisie(
-            id=row[0],
-            time_stamp=row[1],
-            content=row[2],
-            problem_id=row[3],
-            score=row[4],
-            user_id=row[5],
-            contest_id=row[6],
-            weird_percent=row[7],
-            similarity_percent=row[8]
-    )
 
-    return submission
+    submissions = []
+
+    for row in rows:
+
+        submission = Submisie(
+                id=row[0],
+                time_stamp=row[1],
+                content=row[2],
+                problem_id=row[3],
+                score=row[4],
+                user_id=row[5],
+                contest_id=row[6],
+                weird_percent=row[7],
+                similarity_percent=row[8]
+        )
+
+        submissions.append(submission)
+
+    return submissions
 
 
 def get_submissions_for_elev(elev: Elev, count: int = -1):
@@ -658,30 +664,36 @@ if __name__ == "__main__": #asta ii numa de test
         )
 
         add_submission(
-            kn_submission_id=88,
-            time_stamp=125,
-            source_code="print('Hello')",
-            problem_id=1001,
-            score=100,
-            user_id=42,
-            contest_id=contest_id,
-            weird_percent=0
+            Submisie(
+                id=88,
+                time_stamp=125,
+                content="print('Hello')",
+                problem_id=1001,
+                score=100,
+                user_id=42,
+                contest_id=1,
+                weird_percent=0,
+                similarity_percent=40
+            )
         )
         add_submission(
-            kn_submission_id=89,
-            time_stamp=126,
-            source_code="print('Hello guys')",
-            problem_id=1001,
-            score=100,
-            user_id=43,
-            contest_id=1,
-            weird_percent=0
+            Submisie(
+                id=89,
+                time_stamp=126,
+                content="print('Hello guys')",
+                problem_id=1001,
+                score=100,
+                user_id=43,
+                contest_id=1,
+                weird_percent=0,
+                similarity_percent=40
+            )
         )
 
     elev1 = Elev("Andrei", "Andrei_the_killer", 42)
     elev2 = Elev("Vlad", "Vlad_the_killer", 43)
 
-    submisii = get_submissions_for_elev(elev1)
+    submisii = get_submissions_of_contest(1)
 
     for s in submisii:
         print(s.user_id, s.score, s.time_stamp, s.content)

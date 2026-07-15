@@ -185,7 +185,7 @@ def end_contest(strat_time : int, end_time : int, clasa : Clasa, probleme : list
                 other_text.append(submission.content)
 
             similarity_percent = get_similarity_2(other_text , self_text)
-            similarity_percent = round(similarity_percent, 2)
+            #similarity_percent = round(similarity_percent, 2)  #is retardat
 
             for i in range(len(batch_self)):
                 submission = batch_self[i]
