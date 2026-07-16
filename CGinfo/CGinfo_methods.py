@@ -113,15 +113,52 @@ class ButonClasa(ft.Button):
 
 
         for i in elevi:
+            def remove_elev(e, current_elev=i):
+                db = get_db()
+                q = Query()
+                
+                res = db.search((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume))
+
+                updated_elevi = [Elev(**k) for k in res[0]["elevi"] if k["nume"] != current_elev.nume]
+                updated_elevi_d = [elev_obj.to_dict() for elev_obj in updated_elevi]
+
+                db.update(
+                    {"elevi": updated_elevi_d},
+                    (q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume)
+                )
+                
+                self._page.show_dialog(
+                    ft.SnackBar(
+                        content=ft.Row(
+                            controls=[
+                                ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                                ft.Text("Elev eliminat cu succes!", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)
+                            ],
+                            alignment=ft.MainAxisAlignment.CENTER,
+                        ),
+                        duration=3000,
+                        bgcolor=ft.Colors.TEAL_600
+                    )
+                )
+                self.class_selection(e)
+                #self._page.update()
+
             self._page.add(
                 ft.Row(
-                    controls=ButonElev(nume=i.nume),
+                    controls=[
+                        ft.IconButton(ft.Icons.REMOVE_CIRCLE_ROUNDED, opacity=0, disabled=True), # schema haha
+                        ButonElev(nume=i.nume),
+                        ft.IconButton(ft.Icons.REMOVE_CIRCLE_ROUNDED, on_click=remove_elev, icon_color=ft.Colors.RED_300)
+                    ],
                     alignment=ft.MainAxisAlignment.CENTER,
                 )
             )
 
         # adaugare lista cu elevii aici pe linia asta
         self._page.add(
+            ft.Row(
+                height=20
+            ),
             ft.Row(
                 controls=[ButonAddElev(page = self._page, clasa=self.clasa, back_route=self.class_selection)],
                 alignment=ft.MainAxisAlignment.CENTER,
@@ -609,7 +646,7 @@ class ContestButton(ft.Button):
                                 alignment=ft.MainAxisAlignment.CENTER
                              ),
                              ft.Row(controls=[
-                                  ft.Text(f"Contest #{contest_id}", size=45),
+                                  ft.Text(f"{properties.name}", size=45),
                              ],
                              alignment=ft.MainAxisAlignment.CENTER
                             ),
@@ -631,8 +668,8 @@ class ContestButton(ft.Button):
             self.bgcolor = ft.Colors.GREEN_ACCENT_400
             self.color = ft.Colors.BLACK
         else:
-            self.bgcolor = ft.Colors.BLUE_GREY_200
-            self.color = ft.Colors.BLACK
+            self.bgcolor = ft.Colors.BLUE_GREY_800
+            self.color = ft.Colors.BLUE_GREY_100
         
         self.width = 300
         self.height = 120
@@ -761,8 +798,8 @@ class SubmissionButton(ft.Button):
                         )
         
         self._page = page
-        self.bgcolor = ft.Colors.ORANGE_ACCENT_100
-        self.color = ft.Colors.BLACK
+        self.bgcolor = ft.Colors.CYAN_900
+        self.color = ft.Colors.CYAN_50
         self.width = 300
         self.height = 120
         self.style = ft.ButtonStyle(
@@ -785,7 +822,7 @@ class SubmissionButton(ft.Button):
             ft.Row(
                 controls=[
                     ft.ElevatedButton(content=ft.Column(controls=[ft.Text("Similaritatea Jaccard", size=22, text_align=ft.TextAlign.CENTER),
-                                                               ft.Text(f"{self.submisie.similarity_percent}", size=50, text_align=ft.TextAlign.CENTER)
+                                                               ft.Text(f"{self.submisie.similarity_percent}%", size=50, text_align=ft.TextAlign.CENTER)
                                                                ],
                                                                alignment=ft.MainAxisAlignment.CENTER,
                                                                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -808,8 +845,8 @@ class SubmissionButton(ft.Button):
                         bgcolor=ft.Colors.BLUE_GREY_800,
                         color=ft.Colors.CYAN_ACCENT_200
                     ),
-                    ft.ElevatedButton(content=ft.Column(controls=[ft.Text("Similaritatea Stilului (AI)", size=22, text_align=ft.TextAlign.CENTER),
-                                                               ft.Text(f"{self.submisie.weird_percent}", size=50, text_align=ft.TextAlign.CENTER)
+                    ft.ElevatedButton(content=ft.Column(controls=[ft.Text("Nesimilaritatea Stilului (AI)", size=22, text_align=ft.TextAlign.CENTER),
+                                                               ft.Text(f"{self.submisie.weird_percent}%", size=50, text_align=ft.TextAlign.CENTER)
                                                                ],
                                                                alignment=ft.MainAxisAlignment.CENTER,
                                                                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -854,6 +891,8 @@ class SubmissionButton(ft.Button):
             alignment=ft.MainAxisAlignment.CENTER,
         )
         )
+
+        self._page.update()
 
         return
 
