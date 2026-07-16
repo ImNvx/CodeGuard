@@ -419,6 +419,20 @@ def update_contest_fetched(contest_id: int, value: bool, db_path=DB_NAME):
     conn.commit()
     conn.close()
 
+def update_contest_endtime(contest_id: int, time_stamp : int, db_path=DB_NAME):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE concursuri
+        SET end_time = ?
+        WHERE id = ?
+    """, (time_stamp, contest_id))
+
+    conn.commit()
+    conn.close()
+
+
 def update_submission_similarity(submission_id: int, contest_id : int, value: float, db_path=DB_NAME):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
