@@ -7,7 +7,7 @@ from CGinfo.kn import *
 import asyncio
 
 def main(page: ft.Page):
-    page.window.min_width = 1000
+    page.window.min_width = 1200
     page.window.min_height = 600
     page.scroll = ft.ScrollMode.AUTO
 

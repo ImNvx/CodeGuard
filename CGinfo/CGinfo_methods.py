@@ -10,6 +10,7 @@ import sys
 import datetime
 import CGinfo.database
 import re
+import flet_code_editor as fce
 
 def get_elev_submissions(kn_user): #returneaza toate submisiile unui elev din db
     return "int main()"
@@ -826,7 +827,32 @@ class SubmissionButton(ft.Button):
         )
 
         self._page.add(
+            ft.Column(height=30)
+        )
 
+        self._page.add(
+            ft.Row(
+            controls=[
+                ft.Container(
+                    content=fce.CodeEditor(
+                        language=fce.CodeLanguage.CPP,
+                        code_theme=fce.CodeTheme.DRACULA,
+                        value=f"{self.submisie.content}",
+                        expand=True,
+                        read_only=True,
+                        text_style=ft.TextStyle(size=20)
+                    ),
+                    width=600,
+                    height=720,
+                    padding=10,
+                    border_radius=10,
+                    bgcolor=ft.Colors.BLUE_GREY_900,
+                    border=ft.Border.all(0.5, ft.Colors.BLUE_GREY_700),
+                    expand=True
+                )
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+        )
         )
 
         return
