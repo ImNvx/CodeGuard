@@ -114,41 +114,60 @@ class ButonClasa(ft.Button):
 
         for i in elevi:
             def remove_elev(e, current_elev=i):
-                db = get_db()
-                q = Query()
-                
-                res = db.search((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume))
+                confirm_dialog = ft.AlertDialog()
 
-                updated_elevi = [Elev(**k) for k in res[0]["elevi"] if k["nume"] != current_elev.nume]
-                updated_elevi_d = [elev_obj.to_dict() for elev_obj in updated_elevi]
-
-                db.update(
-                    {"elevi": updated_elevi_d},
-                    (q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume)
-                )
-                
-                self._page.show_dialog(
-                    ft.SnackBar(
-                        content=ft.Row(
-                            controls=[
-                                ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
-                                ft.Text("Elev eliminat cu succes!", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)
-                            ],
-                            alignment=ft.MainAxisAlignment.CENTER,
-                        ),
-                        duration=3000,
-                        bgcolor=ft.Colors.TEAL_600
+                def on_confirm(e):
+                    confirm_dialog.open = False
+                    self._page.update()
+                    db = get_db()
+                    q = Query()
+                    
+                    res = db.search((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume))
+                    updated_elevi = [Elev(**k) for k in res[0]["elevi"] if k["nume"] != current_elev.nume]
+                    updated_elevi_d = [elev_obj.to_dict() for elev_obj in updated_elevi]
+                    
+                    db.update(
+                        {"elevi": updated_elevi_d},
+                        (q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume)
                     )
-                )
-                self.class_selection(e)
-                #self._page.update()
+                    
+                    self._page.show_dialog(
+                        ft.SnackBar(
+                            content=ft.Row(
+                                controls=[
+                                    ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                                    ft.Text("Elev eliminat cu succes!", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)
+                                ],
+                                alignment=ft.MainAxisAlignment.CENTER,
+                            ),
+                            duration=3000,
+                            bgcolor=ft.Colors.TEAL_600
+                        )
+                    )
+                    self.class_selection(e)
+                
+                def on_cancel(e):
+                    confirm_dialog.open = False
+                    self._page.update()
+
+                confirm_dialog.modal = True
+                confirm_dialog.title = ft.Text("Confirmare")
+                confirm_dialog.content = ft.Text(f"Sigur doriți să ștergeți elevul {current_elev.nume} ?", size=18)
+                confirm_dialog.actions = [
+                    ft.TextButton("Da", on_click=on_confirm),
+                    ft.TextButton("Nu", on_click=on_cancel)
+                ]
+                confirm_dialog.actions_alignment = ft.MainAxisAlignment.END
+                self._page.show_dialog(confirm_dialog)
+                self._page.update()
+                    
 
             self._page.add(
                 ft.Row(
                     controls=[
-                        ft.IconButton(ft.Icons.REMOVE_CIRCLE_ROUNDED, opacity=0, disabled=True), # schema haha
+                        ft.IconButton(ft.Icons.REMOVE_CIRCLE_ROUNDED, opacity=0, icon_size=25, disabled=True), # schema haha
                         ButonElev(nume=i.nume),
-                        ft.IconButton(ft.Icons.REMOVE_CIRCLE_ROUNDED, on_click=remove_elev, icon_color=ft.Colors.RED_300)
+                        ft.IconButton(ft.Icons.REMOVE_CIRCLE_ROUNDED, on_click=remove_elev, icon_color=ft.Colors.RED_300, icon_size=25)
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                 )
@@ -525,6 +544,7 @@ class NewContestButton(ft.Button):
                         ft.Text("Valori invalide", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)],
                         alignment=ft.MainAxisAlignment.CENTER,
                         ),
+
                     duration=3000,
                     bgcolor=ft.Colors.RED_900
                 ))
@@ -549,6 +569,7 @@ class NewContestButton(ft.Button):
                 )
                 if id_contest:
                      push_contest_to_elev_db(id_contest)
+
                      self._page.show_dialog(ft.SnackBar(
                         content=ft.Row(
                             controls=[
@@ -638,6 +659,9 @@ class ContestButton(ft.Button):
             if i.score == 100:
                correct_submissions += 1
 
+        text_submisii = [ft.Text(f"Număr submisii: {len(self.submissions)}", text_align=ft.TextAlign.LEFT, size=14),
+                         ft.Text(f"Submisii corecte: {correct_submissions}", text_align=ft.TextAlign.RIGHT, size=14)]
+        
         super().__init__(content=
                          ft.Column(controls=[
                              ft.Row(
@@ -651,10 +675,7 @@ class ContestButton(ft.Button):
                              alignment=ft.MainAxisAlignment.CENTER
                             ),
                             ft.Row(
-                                controls=[
-                                    ft.Text(f"Număr submisii: {len(self.submissions)}", text_align=ft.TextAlign.LEFT, size=14),
-                                    ft.Text(f"Submisii corecte: {correct_submissions}", text_align=ft.TextAlign.RIGHT, size=14)
-                                ],
+                                controls=text_submisii if not is_running else [],
                                 alignment=ft.MainAxisAlignment.CENTER
                             )
                          ],
@@ -663,6 +684,7 @@ class ContestButton(ft.Button):
         self._page = page
         self.contest_id = contest_id
         self.properties = properties
+        self.is_running = is_running
 
         if is_running:
             self.bgcolor = ft.Colors.GREEN_ACCENT_400
@@ -683,21 +705,37 @@ class ContestButton(ft.Button):
         self._page.clean()
         self._page.title = f"Istoric submisii contest {self.properties.id}"
 
-        submission_buttons = []
-        for i in self.submissions:
-            submission_buttons.append(SubmissionButton(contest=self.properties, submisie=i, page=self._page, back_route=self.show_contest_submissions))
-
-        self._page.add(
-            ButonBack(dest=self.back_route)
-        )
-        for i in range(0, len(self.submissions), 3):
+        if self.is_running:
             self._page.add(
+                ButonBack(dest=self.back_route),
                 ft.Row(
-                    controls=submission_buttons[i:i+3],
-                    alignment=ft.MainAxisAlignment.CENTER,
-                    spacing=25
+                    ft.Text("Concursul este în desfășurare", size=38, weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_GREY_100),
+                    alignment=ft.MainAxisAlignment.CENTER
+                ),
+                ft.Row(
+                    height=20
+                ),
+                ft.Row(
+                    ButonEndContest(page=self._page, contest=self.properties, back_route=self.back_route),
+                    alignment=ft.MainAxisAlignment.CENTER
                 )
             )
+        else:
+            submission_buttons = []
+            for i in self.submissions:
+                submission_buttons.append(SubmissionButton(contest=self.properties, submisie=i, page=self._page, back_route=self.show_contest_submissions))
+
+            self._page.add(
+                ButonBack(dest=self.back_route)
+            )
+            for i in range(0, len(self.submissions), 3):
+                self._page.add(
+                    ft.Row(
+                        controls=submission_buttons[i:i+3],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        spacing=25
+                    )
+                )
 
         self._page.update()
 
@@ -895,6 +933,47 @@ class SubmissionButton(ft.Button):
         self._page.update()
 
         return
+
+class ButonEndContest(ft.Button):
+    def __init__(self, page : ft.Page, contest : Contest, back_route):
+        super().__init__(content=ft.Text("Oprire concurs", size=28, text_align=ft.TextAlign.CENTER, weight='bold'),)
+        
+        self._page = page
+        self.bgcolor = ft.Colors.RED_ACCENT_100
+        self.color = ft.Colors.BLACK
+        self.width = 300
+        self.height = 80
+
+        self.icon = ft.Icon(
+            ft.Icons.STOP_CIRCLE_ROUNDED,
+            size=50,
+        )
+        self.style = ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=16)
+        )
+
+        self.on_click = self.end_contest
+        self.back_route = back_route
+        self.properties = contest
+
+    def end_contest(self, e):
+        CGinfo.database.update_contest_endtime(self.properties.id, get_unix_now())
+        self._page.show_dialog(
+                ft.SnackBar(
+                        content=ft.Row(
+                        controls=[
+                        ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                        ft.Text("Concurs oprit cu succes!", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                    ),
+                    duration=3000,
+                    bgcolor=ft.Colors.TEAL_600
+                )
+            )
+        self.back_route()
+            
+
 
 ###de aici in jos mi am bagat eu mainile - mester
 
