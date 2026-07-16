@@ -1,0 +1,17 @@
+torch
+transformers
+scipy
+datasets
+tqdm
+Flask
+flet
+flet-code-editor
+tinydb
+beautifulsoup4
+lxml
+requests
+mysql-connector-python
+regex
+termcolor
+sqlite3
+zoneinfo

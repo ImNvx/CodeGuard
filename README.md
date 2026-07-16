@@ -5,26 +5,197 @@
 > *"Ai schimbat un i cu j, Să treci testul cu curaj. Dar rețeaua mea e smart, Și te prinde la plagiat!"*
 > *"Datasetu-i de cinci giga, Procesorul stă și strigă. Placa video s-a prăjit, Dar modelul a ieșit!"*
 
-## Ce este CodeGuard?
-CodeGuard este un sistem inteligent de analiză a codului sursă, conceput pentru a detecta plagiatul și a evalua autenticitatea soluțiilor încărcate de utilizatori. Sistemul îmbină tehnici clasice de analiză a similarității textuale (Jaccard similarity) cu metode avansate de Inteligență Artificială (Transformer + MLP) pentru a evalua un "grad de dubioșenie" (weird percent) bazat pe stilul de programare al fiecărui utilizator.
+# CodeGuard
 
-## Instalare (Librarii Necesare)
-Dependințele necesare rularii proiectului pot fi instalate folosind `pip`:
+**O suita de aplicatii software pentru detectarea plagiatului din codul sursa.**
 
-```bash
-pip install -r requirments.txt
+CodeGuard este o platforma de analiza a codului sursa. Sistemul combina tehnici clasice de similaritate textuala (Jaccard similarity cu normalizare structurala) cu un model de inteligenta artificiala antrenat de noi cu o arhitectura de tip hibrid (Transformer si Multi-Layer Perceptron), pentru a genera amprente de stil unice fiecarui utilizator si a evalua autenticitatea submisiilor.
+
+Componenta principala, **CGinfo Dashboard**, ofera o interfata grafica pentru gestionarea claselor, elevilor si a concursurilor, integrata cu platforma [Kilonova.ro](https://kilonova.ro) pentru colectarea automata a submisiilor.
+
+---
+
+## Cuprins
+
+- [CGinfo Dashboard](#cginfo-dashboard)
+  - [Prezentare generala](#prezentare-generala)
+  - [Functionalitati principale](#functionalitati-principale)
+  - [Arhitectura](#arhitectura-proiectului)
+  - [Captarea si procesarea submisiilor](#captarea-si-procesarea-submisiilor)
+- [Module suport](#module-suport)
+  - [Modulul API](#modulul-api)
+  - [Modulul AI](#modulul-ai)
+  - [Modulul OFFLINE](#modulul-offline)
+- [Instalare](#instalare)
+- [Configuratie](#configuratie)
+- [Utilizare](#utilizare)
+- [Structura proiectului](#structura-proiectului)
+
+---
+
+## CGinfo Dashboard
+
+### Prezentare generala
+
+CGinfo Dashboard este o aplicatie cross-platform construita cu [Flet](https://flet.dev/). Am ales Flet deoarece este un framework lightweight, iar faptul ca integreaza Material 3 Expressive si Cupertino Design Framework a fost un mare plus. Aplicatia se conecteaza la platforma kilonova.ro, colecteaza automat submisiile elevilor la finalul fiecarui concurs si le analizeaza prin doua metode complementare:
+
+| Metrica | Metoda | Scop |
+|---|---|---|
+| **Similaritate Jaccard** | Analiza structurala clasica | Detecteaza copierea directa intre submisii prin compararea shingle-urilor normalizate |
+| **Nesimilaritate de stil (weird percent)** | Retea neuronala hibrida | Evalueaza daca o submisie se abate de la stilul de programare istoric al utilizatorului |
+
+### Functionalitati principale
+
+**Gestionare clase si elevi**
+- Crearea si administrarea claselor
+- Adaugarea si eliminarea elevilor cu validare automata a existentei utilizatorului pe Kilonova.
+
+**Gestionare concursuri**
+- Crearea concursurilor cu nume, lista de probleme si interval orar
+- Monitorizare a concursurilor active
+- Istoric complet al concursurilor anterioare per clasa
+
+**Analiza submisiilor**
+- Colectare automata a submisiilor de pe Kilonova la finalul concursului
+- Calcul automat al metricilor de similaritate si autenticitate
+- Vizualizare detaliata a fiecarei submisii, incluzand:
+  - Scorul obtinut pe submisia respectiva
+  - Procentul de similaritate Jaccard fata de celelalte submisii
+  - Procentul de nesimilaritate de stil (AI) fata de istoricul utilizatorului
+  - Codul sursa complet
+
+### Arhitectura proiectului
+
+```
+CGinfo Dashboard
+├── CGinfo_dashboard.py      Punctul de intrare
+├── CGinfo_methods.py        Componente UI si logica de navigare
+├── CGinfo_ds.py             Structuri de date (Clasa, Elev, Submisie, Contest)
+├── database.py              Operatii SQLite (submisii, concursuri)
+└── kn.py                    Integrare API Kilonova si handler concursuri
 ```
 
-Un set de comenzi pentru a descarca proiectul si dependentele sale este urmatorul:
+Aplicatia utilizeaza doua baze de date:
+
+- **TinyDB** (`db_clase.json`) pentru stocarea claselor si a elevilor asociati. Am ales TinyDB deoarece este foarte usor de lucrat cu el in Python si nu aveam nevoie de o baza de date complexa la aceste date.
+- **SQLite** (`Userdata/CGinfo.db`) pentru stocarea submisiilor si a concursurilor. A fost nevoie de SQLite aici, deoarece codul sursa poate sa ajunga sa ocupe mult spatiu si vrem ca interogarile sa fie facute cat mai rapid si eficient. Faptul ca este serverless a fost o caracteristica importanta.
+
+### Captarea si procesarea submisiilor
+
+La finalul fiecarui concurs, un handler asincron ruleaza automat urmatorul flux:
+
+```
+Concurs incheiat
+    │
+    ├── Pentru fiecare elev si problema:
+    │       │
+    │       ├── Interogare API Kilonova (submisii in intervalul de timp al concursului)
+    │       ├── Descarcare cod sursa
+    │       ├── Calcul weird_percent (AI) pe baza istoricului elevului
+    │       └── Salvare in baza de date SQLite
+    │
+    └── Pentru fiecare elev si problema (a doua trecere):
+            │
+            ├── Calcul similaritate Jaccard intre submisiile proprii si cele ale celorlalti
+            └── Actualizare similarity_percent in baza de date
+```
+
+Handler-ul verifica periodic daca exista concursuri incheiate care nu au fost inca procesate, si asigura colectarea automata a submisiilor.
+
+---
+
+## Module suport
+
+### Modulul API
+
+Modulul API expune functionalitatile CodeGuard prin endpoint-uri REST, bazate pe Flask. Acesta opereaza independent de CGinfo Dashboard si poate fi utilizat pentru integrarea cu platforme externe, precum website-uri de programare competitiva.
+
+**Endpoint-uri disponibile:**
+
+| Endpoint | Metoda | Descriere |
+|---|---|---|
+| `/check_similarity` | POST | Compara similaritatea intre o lista de solutii existente (Jaccard) |
+| `/check_homework` | POST | Verifica temele pentru mai multi utilizatori si probleme |
+| `/submit_and_check` | POST | Adauga o solutie si evalueaza gradul de nesimilaritate de stil |
+| `/get_weird_percent` | POST | Returneaza procentul calculat pentru un `solution_id` |
+| `/recheck_weird_percent` | POST | Recalculeaza procentul cu submisii actualizate |
+
+**Fisiere componente:**
+
+- `api.py` — Aplicatia Flask cu definitiile endpoint-urilor
+- `CodeGuard_Database.py` — Gestiunea conexiunii si interogarilor MySQL
+- `CodeGuard_Similarity.py` — Implementarea analizei de similaritate (curatare cod, normalizare tokenuri, shingle-uri, Jaccard cu ajustare exponentiala)
+
+**Nota:** Modulul API utilizeaza MySQL ca baza de date, spre deosebire de CGinfo Dashboard care foloseste SQLite. Fisierul de configurare necesar este `API/config.json`.
+
+---
+
+### Modulul AI
+
+Modulul de inteligenta artificiala este responsabil pentru generarea amprentelor de stil si detectarea deviatiilor de la comportamentul obisnuit al unui programator.
+
+**Arhitectura modelului (`CodeGuardHybrid`):**
+
+Modelul este o retea neuronala hibrida creata cu ajutorul PyTorch, compusa din doua ramuri:
+
+1. **Transformer Encoder** — Proceseaza codul tokenizat folosindu-se de Positional Encoding din celebra lucrare stiintifica "Attention is all you need" si genereaza un vector prin mean pooling. Aceasta ramura extrage particularitatile sintactice si lexicale (denumirea variabilelor, etc.)
+
+2. **MLP (Multi-Layer Perceptron)** — Proceseaza 10 caracteristici de stil extrase explicit din cod:
+   - Conventii de denumire (camelCase, snake_case, PascalCase, etc.)
+   - Stilul de plasare a acoladelor
+   - Distantarea operatorilor
+   - Gradul de indentare
+   - Raportul de comentarii
+
+Cele doua ramuri sunt concatenate si proiectate intr-un vector de amprenta normalizat.
+
+**Inferenta (`CodeGuard_AI.py`):**
+
+Procesul de evaluare a unei submisii noi:
+1. Se tokenizeaza submisiile anterioare ale utilizatorului pentru a calcula un centroid (media amprentelor), cu cat avem mai multe submisii anterioare, cu atat modelul este mai precis.
+2. Se calculeaza `cosine_similarity` intre centroid si vectorul rezultat din submisia curenta
+3. Rezultatul este transformat intr-un `weird_percent` — o valoare scalata care indica probabilitatea ca submisia nu apartine utilizatorului
+
+---
+
+### Modulul OFFLINE
+
+Modulul OFFLINE ofera posibilitatea de verificare a similaritatii codului direct din linia de comanda, fara a necesita o baza de date sau conexiune la internet.
+
+**`check_folder.py`** (disponibil si ca executabil standalone `check_folder.exe`):
+
+- Analizeaza recursiv un director cu structura `folder/elev/fisiere`
+- Compara similaritatea intre toate fisierele din fiecare subdirector
+- Afiseaza rezultatele intr-o structura arborescenta cu codificare cromatica:
+  - **Rosu** — Similaritate ridicata (peste 70%), necesita verificare
+  - **Standard** — Similaritate moderata
+  - **Verde** — Similaritate scazuta, fara indicii de copiere
+
+---
+
+## Instalare
+
+### Cerinte preliminare
+
+- Python 3.9 sau mai nou
+- pip
+- Dependentele disponibile in requirements.txt
+
+### Instalarea dependentelor
+
 ```bash
 git clone https://github.com/ImNvx/CodeGuard.git
 cd CodeGuard
-pip install -r requirments.txt
+pip install -r requirements.txt
 ```
 
-Pachetele folosite includ: `mysql-connector-python`, `DateTime`, `regex`, `Flask`, `torch` și `transformers`.
+Pachetele principale: `torch`, `transformers`, `Flask`, `flet`, `flet-code-editor`, `tinydb`, `beautifulsoup4`, `lxml`, `requests`, `mysql-connector-python`, `sqlite3`.
+
+---
 
 ## Configuratie
+
+### Modulul API (MySQL) *(Doar pentru utilizatorii care vor sa integreze CodeGuard in website-ul lor)*
 
 Fisier: `API/config.json`
 
@@ -37,109 +208,62 @@ Fisier: `API/config.json`
 }
 ```
 
-In fisierul `API/api.py` se mai pot configura urmatoarele
+Parametri configurabili in `API/api.py`:
+
 ```python
-TABLE = 'solutions'     #tabelul in care CodeGuard va memora solutiile si datele despre ele
-ACCEPTED = '100'        #ce inseamna o solutie acceptata
-API_ROOT = ''           #prefixul pentru api (ex: daca API_ROOT = 'api' pentru a accesa endpointul 'submit_and_check' adresa web va fi: http://example.com:5000/api/submit_and_check )
-API_PORT = 5000         #portul pe care va rula api-ul
+TABLE = 'solutions'     # Tabelul pentru stocarea solutiilor
+ACCEPTED = '100'        # Valoarea care defineste o solutie acceptata
+API_ROOT = ''           # Prefixul URL pentru toate endpoint-urile
+API_PORT = 5000         # Portul pe care ruleaza serverul Flask
 ```
+
+### CGinfo Dashboard
+
+Baza de date SQLite (`Userdata/CGinfo.db`) este creata automat la prima rulare. Datele claselor si elevilor sunt stocate in `CGinfo/db_clase.json`, si pot fi gestionate exclusiv prin interfata grafica.
+
+---
 
 ## Utilizare
 
-Pentru a porni API-ul rulati urmatoarea comanda din folderul principal al proiectului
+*Urmatoarele comenzi trebuie rulate din radacina repo-ului.*
+
+### CGinfo Dashboard (aplicatia principala)
+
+```bash
+python3 -m CGinfo.CGinfo_dashboard
+```
+*(Sau prin rularea executabilului disponibil in sectiunea **Releases**)*
+
+### API REST
+
 ```bash
 python3 -m API.api
 ```
 
-Pentru a rula check_folder pe alt sistem de operare decat Windows rulati urmatoarea comanda din folderul principal al proiectului
+### Verificare offline (linia de comanda)
+
 ```bash
 python3 -m OFFLINE.check_folder
 ```
 
----
-
-## Structura Proiectului
-
-Proiectul este împărțit în patru module principale:
-1. **API** - Interfața de comunicare web (Flask) și gestiunea bazei de date.
-2. **AI** - Modelele de inteligență artificială pentru generarea amprentelor de cod.
-3. **OFFLINE** - Scripturi pentru verificarea similarității locale pe sisteme de fișiere.
-4. **POC (Proof of Concept)** - O aplicație demonstrativă de tip web pentru a testa si demonstra API-ul.
+*(Sau prin rularea executabilului disponibil in sectiunea **Releases**)*
 
 ---
 
-## 1. Modulul API
+## Licenta
 
-Acest modul expune funcționalitățile de bază ale CodeGuard prin intermediul unor endpoint-uri REST.
+CodeGuard — A source code plagiarism detection suite.
+Copyright (C) 2026 Bușoi David, Meștereagă Eric
 
-### `api.py`
-Aplicația principală Flask care expune endpoint-urile:
-- `POST /check_similarity`: Primește o listă de ID-uri de soluții și returnează un tabel cu similaritățile (procentaje) între toate perechile de soluții, folosind metode clasice (Jaccard).
-- `POST /check_homework`: Verifică tema pentru mai mulți utilizatori și probleme, găsind ultima soluție acceptată a fiecăruia și comparându-le.
-- `POST /submit_and_check`: Adaugă o nouă soluție în baza de date. Dacă există submisii anterioare, sistemul AI evaluează gradul de "dubioșenie" (`weird_percent`) comparând soluția curentă cu amprentele stilului anterior al utilizatorului.
-- `POST /get_weird_percent`: Returnează procentul calculat pentru un anumit `solution_id`.
-- `POST /recheck_weird_percent`: Recalculează procentajul de autenticitate folosind submisiile trecute specificate și dă update în baza de date.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-### `CodeGuard_Database.py`
-Gestionează conexiunea și interogările la baza de date MySQL.
-- Baza de date memorează detaliile submisiei (`solution_id`, `user_id`, `problem_id`, `score`, `timestamp`, `weird_percent`, `text`).
-- Funcții de bază: `add_solution`, `get_code`, `get_weird_percent`, `update_weird_percent`, `get_latest`.
-- Fișierul de configurare necesar: `API/config.json`.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-### `CodeGuard_Similarity.py`
-Implementează analiza algoritmică a similarității codului:
-- `clean_code(code)`: Elimină comentariile (`//` și `/* */`).
-- `normalize_tokens(code)`: Păstrează cuvintele cheie structurale (`for`, `while`, `if`, etc.) dar înlocuiește numele variabilelor și funcțiilor utilizatorului cu tokenul generic `VAR`.
-- `shingles(tokens, k=3)`: Grupează codul normalizat în secvențe de lungime `k`.
-- `jaccard(a, b)`: Calculează similaritatea Jaccard între două seturi de shingles. Procentele rezultate sunt ajustate exponențial (puterea 0.7) pentru a amplifica vizibilitatea scorurilor mici/medii.
-
----
-## 2. Modulul AI
-
-Responsabil pentru detectarea deviațiilor de la stilul obișnuit al unui programator.
-
-### `CodeGuardEncoder.py`
-Arhitectura modelului și antrenarea:
-- Funcția `getFeatures(code)`: Extrage 10 caracteristici de stil din cod (ex. camelCase, snake_case, pascalCase, K&R braces, Allman braces, distanțarea operatorilor, gradul de indentare, raportul de comentarii).
-- `CodeGuardHybrid`: O arhitectură neuronală hibridă PyTorch. Include:
-  - O componentă **Transformer Encoder** care primește codul tokenizat, adaugă Positional Encoding și generează un `mean_pooled` vector.
-  - Un **MLP (Multi-Layer Perceptron)** simplu pentru trăsăturile de stil extrase de `getFeatures`.
-  - Combinarea celor două rezultând un "fingerprint" (o amprentă a codului) de ieșire normalizată.
-- Scriptul include logica de antrenare folosind PyTorch, dataset-uri HuggingFace, și `CosineEmbeddingLoss` pentru a apropia amprentele scrise de același utilizator.
-
-### `CodeGuard_AI.py`
-Interfața de inferență a modelului:
-- Clasa `CodeGuard` încarcă modelul (`CodeGuard_encoder_v2.pth`) și tokenizatorul la inițializare.
-- Funcția `checkSubmission`: Codifică submisiile anterioare ale utilizatorului pentru a calcula un centroid (media amprentelor). Apoi calculează `cosine_similarity` între centroid și vectorul submisiei curente.
-- Transformă rezultatul într-un `weird_percent`, scalând intervalul de similaritate a modelului pentru a reprezenta probabilitatea de cod străin/plagiat.
-
----
-## 3. Modulul OFFLINE
-
-Oferă posibilitatea de a verifica offline, din linia de comandă, o structură de directoare.
-
-### `check_folder.py` (și executabilul `check_folder.exe`)
-- Analizează recursiv un folder (ex: lucrările unor elevi, separate prin foldere).
-- Pentru fiecare folder, compară similaritatea între toate fișierele conținute, folosind funcțiile clasice de la `CodeGuard_Similarity.py`.
-- Afișează în terminal o structură arborescentă ("tree"), semnalizând cu roșu similaritățile mari (peste 70%), simplu pentru scoruri medii și cu verde pentru scoruri mici, ajutând profesorii sau asistenții să identifice rapid sursele copiate local.
-- check_folder.exe este un executabil "stand-alone"
-
----
-
-## 4. Modulul POC (Proof of Concept)
-
-### `proof_of_concept.py`
-Aplicație de frontend/demonstrație care consumă API-ul de bază:
-- Folosește Flask pentru a servi `poc_index.html` (din `templates/`).
-- Include un API proxy integrat (`/poc/<path>`) care redirecționează cu ușurință cererile din browser (care pot avea probleme de CORS) către instanța locală a API-ului principal (portul `5000`).
-- poate fi rulat din folderul principal cu `python3 -m POC.proof_of_concept`
-
-### `CGinfo/app.py`
-O aplicație secundară Flask izolată, destinată testării directe a funcționalităților AI:
-- Rulează pe portul `5001` și expune o interfață de bază (`index.html`).
-- `POST /check`: Un endpoint care importă și folosește direct modulul `CodeGuard_AI` (fără a interacționa cu baza de date MySQL). Compară codul curent cu o listă de submisii anterioare furnizate prin JSON și returnează gradul de "dubioșenie" (`weird_percent`). Funcționează ca un mediu de testare rapidă, dedicat strict inferențelor rețelei neuronale.
-- poate fi rulat din folderul principal cu `python3 -m POC.CGinfo.app`
-  
----
-
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.

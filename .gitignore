@@ -8,3 +8,5 @@ POC/*.json
 deleted/*
 deleted
 *.db
+CGinfo/*.json
+*.html

@@ -1,9 +1,0 @@
-mysql-connector-python
-DateTime
-regex
-Flask
-torch
-transformers
-scipy
-datasets
-termcolor
