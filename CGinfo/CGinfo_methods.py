@@ -28,6 +28,20 @@ def get_db():
 def get_unix_now():
     return datetime.datetime.now().timestamp() * 1000
 
+def get_elev_from_id(id : int):
+    db = get_db()
+    q_clasa = Query()
+    q_elev = Query()
+
+    res = db.get(q_clasa.elevi.any(q_elev.id == id)) # cred ca este si alta functie mai buna decat any() ca sa nu fac loop dupa dar aia e :/
+
+    if res:
+        for elev in res['elevi']: 
+            if elev.get('id') == id:
+                return Elev(**elev)
+
+    return "Eroare"
+
 class ButonBack(ft.IconButton):
     def __init__(self, dest):
         super().__init__()
@@ -478,7 +492,7 @@ class NewContestButton(ft.Button):
                 ))
                 self._page.update()
             else:
-                id_probleme = re.split(r'[;,\s]+', lista_probleme.value)
+                id_probleme = [int(k) for k in re.split(r'[;,\s]+', lista_probleme.value) if k.strip().isdigit()]
 
                 t_start = datetime.datetime.now().replace(hour=start_time.value.hour, minute=start_time.value.minute) # din nou, sper ca nu incepe nimeni concurs la 11:59:59 noaptea
 
@@ -580,12 +594,11 @@ class ContestButton(ft.Button):
         ts_start = get_date_from_unix(properties.start_time)
         ts_end = get_date_from_unix(properties.end_time)
 
-        #submissions = CGinfo.database.get_submissions_of_contest(properties.id)
-        submissions = 0
+        self.submissions = CGinfo.database.get_submissions_of_contest(properties.id)
         correct_submissions = 0
-        #for i in submissions:
-        #    if i.score == 100:
-        #       correct_submissions += 1
+        for i in self.submissions:
+            if i.score == 100:
+               correct_submissions += 1
 
         super().__init__(content=
                          ft.Column(controls=[
@@ -601,14 +614,14 @@ class ContestButton(ft.Button):
                             ),
                             ft.Row(
                                 controls=[
-                                    ft.Text(f"Număr submisii: {correct_submissions}", text_align=ft.TextAlign.LEFT, size=14), # len(submissions)
+                                    ft.Text(f"Număr submisii: {len(self.submissions)}", text_align=ft.TextAlign.LEFT, size=14),
                                     ft.Text(f"Submisii corecte: {correct_submissions}", text_align=ft.TextAlign.RIGHT, size=14)
                                 ],
                                 alignment=ft.MainAxisAlignment.CENTER
                             )
                          ],
                          spacing=2))
-        
+
         self._page = page
         self.contest_id = contest_id
         self.properties = properties
@@ -626,6 +639,29 @@ class ContestButton(ft.Button):
             shape=ft.RoundedRectangleBorder(radius=12)
         )
         self.back_route = back_route
+        self.on_click = self.show_contest_submissions
+
+    def show_contest_submissions(self, e):
+        self._page.clean()
+        self._page.title = f"Istoric submisii contest {self.properties.id}"
+
+        submission_buttons = []
+        for i in self.submissions:
+            submission_buttons.append(SubmissionButton(contest=self.properties, submisie=i, page=self._page, back_route=self.show_contest_submissions))
+
+        self._page.add(
+            ButonBack(dest=self.back_route)
+        )
+        for i in range(0, len(self.submissions), 3):
+            self._page.add(
+                ft.Row(
+                    controls=submission_buttons[i:i+3],
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    spacing=25
+                )
+            )
+
+        self._page.update()
 
 class ContestHistoryButton(ft.IconButton):
     def __init__(self, page : ft.Page, clasa : Clasa, back_route):
@@ -659,8 +695,7 @@ class ContestHistoryButton(ft.IconButton):
                 contests.append(i)
 
         return contests
-    
-    
+
 
     def contest_history(self):
         self._page.clean()
@@ -688,7 +723,7 @@ class ContestHistoryButton(ft.IconButton):
 
         contest_buttons.sort(key= lambda k : k.properties.end_time, reverse=True)
 
-        for i in range(0, len(contest_ids), 3):
+        for i in range(0, len(contest_buttons), 3):
             self._page.add(
                 ft.Row(
                     controls=contest_buttons[i:i+3],
@@ -698,6 +733,102 @@ class ContestHistoryButton(ft.IconButton):
             )
 
         self._page.update()
+        return
+    
+class SubmissionButton(ft.Button):
+    def __init__(self, contest : Contest, submisie : Submisie, page : ft.Page, back_route):
+
+        super().__init__(content=
+                         ft.Column(controls=[
+                             ft.Row(
+                                 controls=[ft.Text(f"Elev: {get_elev_from_id(submisie.user_id).nume}", size=18),
+                                ],
+                                alignment=ft.MainAxisAlignment.CENTER
+                             ),
+                             ft.Row(controls=[
+                                  ft.Text(f"Submisia #{submisie.id}", size=30),
+                             ],
+                             alignment=ft.MainAxisAlignment.CENTER
+                            ),
+                            ft.Row(
+                                controls=[
+                                    ft.Text(f"Scor: {submisie.score}", text_align=ft.TextAlign.LEFT, size=16),
+                                ],
+                                alignment=ft.MainAxisAlignment.CENTER
+                            )
+                            ],)
+                        )
+        
+        self._page = page
+        self.bgcolor = ft.Colors.ORANGE_ACCENT_100
+        self.color = ft.Colors.BLACK
+        self.width = 300
+        self.height = 120
+        self.style = ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=12)
+        )
+        self.on_click = self.show_submission
+        self.submisie = submisie
+        self.contest = Contest
+        self.back_route = back_route
+
+    def show_submission(self, e):
+        self._page.clean()
+        self._page.title = f"Submisia #{self.submisie.id}"
+
+        self._page.add(
+            ButonBack(dest=self.back_route)
+        )
+
+        self._page.add(
+            ft.Row(
+                controls=[
+                    ft.ElevatedButton(content=ft.Column(controls=[ft.Text("Similaritatea Jaccard", size=22, text_align=ft.TextAlign.CENTER),
+                                                               ft.Text(f"{self.submisie.similarity_percent}", size=50, text_align=ft.TextAlign.CENTER)
+                                                               ],
+                                                               alignment=ft.MainAxisAlignment.CENTER,
+                                                               horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                                               spacing=0),
+                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12)),
+                        width=320,
+                        height=120,
+                        bgcolor=ft.Colors.BLUE_GREY_800,
+                        color=ft.Colors.CYAN_ACCENT_200
+                    ),
+                    ft.ElevatedButton(content=ft.Column(controls=[ft.Text("Scor", size=22, text_align=ft.TextAlign.CENTER),
+                                                               ft.Text(f"{self.submisie.score}", size=50, text_align=ft.TextAlign.CENTER)
+                                                               ],
+                                                               alignment=ft.MainAxisAlignment.CENTER,
+                                                               horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                                               spacing=0),
+                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12)),
+                        width=320,
+                        height=120,
+                        bgcolor=ft.Colors.BLUE_GREY_800,
+                        color=ft.Colors.CYAN_ACCENT_200
+                    ),
+                    ft.ElevatedButton(content=ft.Column(controls=[ft.Text("Similaritatea Stilului (AI)", size=22, text_align=ft.TextAlign.CENTER),
+                                                               ft.Text(f"{self.submisie.weird_percent}", size=50, text_align=ft.TextAlign.CENTER)
+                                                               ],
+                                                               alignment=ft.MainAxisAlignment.CENTER,
+                                                               horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                                               spacing=0),
+                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=12)),
+                        width=320,
+                        height=120,
+                        bgcolor=ft.Colors.BLUE_GREY_800,
+                        color=ft.Colors.CYAN_ACCENT_200
+                    )
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=50
+            )
+        )
+
+        self._page.add(
+
+        )
+
         return
 
 ###de aici in jos mi am bagat eu mainile - mester
