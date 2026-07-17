@@ -13,5 +13,3 @@ requests
 mysql-connector-python
 regex
 termcolor
-sqlite3
-zoneinfo
