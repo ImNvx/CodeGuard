@@ -179,7 +179,9 @@ class ButonClasa(ft.Button):
                 height=20
             ),
             ft.Row(
-                controls=[ButonAddElev(page = self._page, clasa=self.clasa, back_route=self.class_selection)],
+                controls=[ButonRemoveClasa(page=self._page, clasa=self.clasa, back_route=self.back_route, placeholder=True),
+                          ButonAddElev(page = self._page, clasa=self.clasa, back_route=self.class_selection),
+                          ButonRemoveClasa(page=self._page, clasa=self.clasa, back_route=self.back_route, placeholder=False),],
                 alignment=ft.MainAxisAlignment.CENTER,
             )
         )
@@ -973,6 +975,73 @@ class ButonEndContest(ft.Button):
             )
         self.back_route()
             
+class ButonRemoveClasa(ft.Button):
+    def __init__(self, page : ft.Page, clasa : Clasa, placeholder : bool, back_route):
+        super().__init__(content=ft.Icon(ft.Icons.CANCEL_OUTLINED, size=40, align=ft.Alignment.CENTER))
+        
+        self._page = page
+        self.bgcolor = ft.Colors.RED_ACCENT_100
+        self.color = ft.Colors.BLACK
+        self.width = 50
+        self.height = 50
+        self.style = ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=16),
+            padding=0
+        )
+        
+        self.clasa = clasa
+        self.on_click = self.remove_clasa
+        self.back_route = back_route
+
+        if placeholder:
+            self.opacity = 0
+            self.disabled = True
+
+    def remove_clasa(self, e):
+        confirm_dialog = ft.AlertDialog()
+
+        def on_confirm(e):
+            confirm_dialog.open = False
+            self._page.update()
+
+            db = get_db()
+            q = Query()
+
+            db.remove((q.nivel == self.clasa.nivel) & (q.nume == self.clasa.nume))
+
+            self._page.show_dialog(
+                ft.SnackBar(
+                    content=ft.Row(
+                        controls=[
+                            ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                            ft.Text("Clasă eliminată cu succes!", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                    ),
+                    duration=3000,
+                    bgcolor=ft.Colors.TEAL_600
+                )
+            )
+
+            self.back_route()
+
+        def on_cancel(e):
+            confirm_dialog.open = False
+            self._page.update()
+
+        confirm_dialog.modal = True
+        confirm_dialog.title = ft.Text("Confirmare")
+        confirm_dialog.content = ft.Text(f"Sigur doriți să ștergeți clasa {self.clasa.nivel}{self.clasa.nume} ?", size=18)
+        confirm_dialog.actions = [
+            ft.TextButton("Da", on_click=on_confirm),
+            ft.TextButton("Nu", on_click=on_cancel)
+        ]
+
+        confirm_dialog.actions_alignment = ft.MainAxisAlignment.END
+        self._page.show_dialog(confirm_dialog)
+
+        self._page.update()
+
 
 
 ###de aici in jos mi am bagat eu mainile - mester
