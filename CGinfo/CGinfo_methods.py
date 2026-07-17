@@ -62,7 +62,7 @@ class ButonBack(ft.IconButton):
 class ButonElev(ft.Button):
     def __init__(self, nume):
         super().__init__(content=ft.Text(nume, size=20))
-        self.width = 300
+        self.width = 320
         self.height = 45
         self.style = ft.ButtonStyle(
             shape=ft.RoundedRectangleBorder(radius=15)
@@ -179,9 +179,10 @@ class ButonClasa(ft.Button):
                 height=20
             ),
             ft.Row(
-                controls=[ButonRemoveClasa(page=self._page, clasa=self.clasa, back_route=self.back_route, placeholder=True),
+                controls=[ButonIncrementareAn(page=self._page, back_route=self.back_route),
                           ButonAddElev(page = self._page, clasa=self.clasa, back_route=self.class_selection),
-                          ButonRemoveClasa(page=self._page, clasa=self.clasa, back_route=self.back_route, placeholder=False),],
+                          ButonRemoveClasa(page=self._page, clasa=self.clasa, back_route=self.back_route, placeholder=False),
+                          ],
                 alignment=ft.MainAxisAlignment.CENTER,
             )
         )
@@ -1030,8 +1031,8 @@ class ButonRemoveClasa(ft.Button):
             self._page.update()
 
         confirm_dialog.modal = True
-        confirm_dialog.title = ft.Text("Confirmare")
-        confirm_dialog.content = ft.Text(f"Sigur doriți să ștergeți clasa {self.clasa.nivel}{self.clasa.nume} ?", size=18)
+        confirm_dialog.title = ft.Text("Confirmare", size=26, weight='bold')
+        confirm_dialog.content = ft.Text(f"Sigur doriți să ștergeți clasa {self.clasa.nivel}{self.clasa.nume} ?", size=22)
         confirm_dialog.actions = [
             ft.TextButton("Da", on_click=on_confirm),
             ft.TextButton("Nu", on_click=on_cancel)
@@ -1042,7 +1043,71 @@ class ButonRemoveClasa(ft.Button):
 
         self._page.update()
 
+class ButonIncrementareAn(ft.Button):
+    def __init__(self, page : ft.Page, back_route):
+        super().__init__(content=ft.Icon(ft.Icons.EDIT_CALENDAR_ROUNDED, size=40, align=ft.Alignment.CENTER))
+        
+        self._page = page
+        self.bgcolor = ft.Colors.PURPLE_ACCENT_100
+        self.color = ft.Colors.BLACK
+        self.width = 50
+        self.height = 50
+        self.style = ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=16),
+            padding=0
+        )
+        
+        self.on_click = self.increment_year
+        self.back_route = back_route
 
+
+    def increment_year(self, e):
+        confirm_dialog = ft.AlertDialog()
+
+        def on_confirm(e):
+            confirm_dialog.open = False
+            self._page.update()
+
+            db = get_db()
+            q = Query()
+
+            db.remove(q.nivel == 12)
+
+            for i in range(11, 4, -1):
+                db.update({"nivel" : i + 1}, q.nivel == i)
+
+            self._page.show_dialog(
+                ft.SnackBar(
+                    content=ft.Row(
+                        controls=[
+                            ft.Icon(ft.Icons.INFO_OUTLINED, align=ft.Alignment.CENTER, color=ft.Colors.BLUE_GREY_100, size=40),
+                            ft.Text("An școlar incrementat cu succes!", size=22, weight='bold', text_align=ft.TextAlign.CENTER, color=ft.Colors.BLUE_GREY_100)
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                    ),
+                    duration=3000,
+                    bgcolor=ft.Colors.TEAL_600
+                )
+            )
+
+            self.back_route()
+
+        def on_cancel(e):
+            confirm_dialog.open = False
+            self._page.update()
+
+        confirm_dialog.modal = True
+        confirm_dialog.title = ft.Text("Incrementare an școlar", size=24, weight='bold')
+        confirm_dialog.content = ft.Text(f"Sigur doriți să incrementați anul școlar? Toate clasele vor avansa cu un nivel, iar clasele a 12-a vor fi șterse din baza de date", size=20)
+        confirm_dialog.actions = [
+            ft.TextButton("Da", on_click=on_confirm),
+            ft.TextButton("Nu", on_click=on_cancel)
+        ]
+
+        confirm_dialog.actions_alignment = ft.MainAxisAlignment.END
+        self._page.show_dialog(confirm_dialog)
+
+        self._page.update()
 
 ###de aici in jos mi am bagat eu mainile - mester
 
