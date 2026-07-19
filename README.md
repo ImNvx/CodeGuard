@@ -15,6 +15,55 @@ Componenta principala, **CGinfo Dashboard**, ofera o interfata grafica pentru ge
 
 ---
 
+## Instalare
+
+Pentru Windows oferim si optinuea de a rula ```CGinfo_dashboard``` si ```verificarea offline``` doar cu niste executabile disponibile in sectiunea **Releases**
+
+### Cerinte preliminare
+
+- Python 3.10 sau mai nou
+- pip
+
+### Instalarea dependentelor
+
+```bash
+git clone https://github.com/ImNvx/CodeGuard.git
+cd CodeGuard
+python3 -m pip install -r requirements.txt
+```
+
+Pachetele principale: `torch`, `transformers`, `Flask`, `flet`, `flet-code-editor`, `tinydb`, `beautifulsoup4`, `lxml`, `requests`, `mysql-connector-python`, `sqlite3`.
+
+---
+
+## Utilizare
+
+*Urmatoarele comenzi trebuie rulate din radacina repo-ului.*
+
+### CGinfo Dashboard (aplicatia principala)
+
+```bash
+python3 -m CGinfo.CGinfo_dashboard
+```
+*(Sau prin rularea executabilului disponibil in sectiunea **Releases**)*
+
+### API REST
+
+```bash
+python3 -m API.api
+```
+
+### Verificare offline (linia de comanda)
+
+```bash
+python3 -m OFFLINE.check_folder
+```
+
+*(Sau prin rularea executabilului disponibil in sectiunea **Releases**)*
+
+---
+
+
 ## Cuprins
 
 - [CGinfo Dashboard](#cginfo-dashboard)
@@ -26,10 +75,7 @@ Componenta principala, **CGinfo Dashboard**, ofera o interfata grafica pentru ge
   - [Modulul API](#modulul-api)
   - [Modulul AI](#modulul-ai)
   - [Modulul OFFLINE](#modulul-offline)
-- [Instalare](#instalare)
-- [Configuratie](#configuratie)
-- [Utilizare](#utilizare)
-- [Structura proiectului](#structura-proiectului)
+- [Configuratie (modulul API)](#configuratie)
 
 ---
 
@@ -173,26 +219,6 @@ Modulul OFFLINE ofera posibilitatea de verificare a similaritatii codului direct
 
 ---
 
-## Instalare
-
-### Cerinte preliminare
-
-- Python 3.9 sau mai nou
-- pip
-- Dependentele disponibile in requirements.txt
-
-### Instalarea dependentelor
-
-```bash
-git clone https://github.com/ImNvx/CodeGuard.git
-cd CodeGuard
-pip install -r requirements.txt
-```
-
-Pachetele principale: `torch`, `transformers`, `Flask`, `flet`, `flet-code-editor`, `tinydb`, `beautifulsoup4`, `lxml`, `requests`, `mysql-connector-python`, `sqlite3`.
-
----
-
 ## Configuratie
 
 ### Modulul API (MySQL) *(Doar pentru utilizatorii care vor sa integreze CodeGuard in website-ul lor)*
@@ -220,33 +246,6 @@ API_PORT = 5000         # Portul pe care ruleaza serverul Flask
 ### CGinfo Dashboard
 
 Baza de date SQLite (`Userdata/CGinfo.db`) este creata automat la prima rulare. Datele claselor si elevilor sunt stocate in `CGinfo/db_clase.json`, si pot fi gestionate exclusiv prin interfata grafica.
-
----
-
-## Utilizare
-
-*Urmatoarele comenzi trebuie rulate din radacina repo-ului.*
-
-### CGinfo Dashboard (aplicatia principala)
-
-```bash
-python3 -m CGinfo.CGinfo_dashboard
-```
-*(Sau prin rularea executabilului disponibil in sectiunea **Releases**)*
-
-### API REST
-
-```bash
-python3 -m API.api
-```
-
-### Verificare offline (linia de comanda)
-
-```bash
-python3 -m OFFLINE.check_folder
-```
-
-*(Sau prin rularea executabilului disponibil in sectiunea **Releases**)*
 
 ---
 
