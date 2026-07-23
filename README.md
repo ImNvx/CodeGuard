@@ -17,7 +17,7 @@ Componenta principala, **CGinfo Dashboard**, ofera o interfata grafica pentru ge
 
 ## Instalare
 
-Pentru Windows oferim si optinuea de a rula ```CGinfo_dashboard``` si ```verificarea offline``` doar cu niste executabile disponibile in sectiunea **Releases**
+Pentru Windows oferim si optiunea de a rula ```CGinfo_dashboard``` si ```verificarea offline``` doar cu niste executabile disponibile in sectiunea **Releases**
 
 ### Cerinte preliminare
 
@@ -39,6 +39,7 @@ Pachetele principale: `torch`, `transformers`, `Flask`, `flet`, `flet-code-edito
 ## Utilizare
 
 *Urmatoarele comenzi trebuie rulate din radacina repo-ului.*
+*Note: Mentionam ca la prima rulare a CGinfo_Dashboard/API va dura mai mult pana se vor initializa baza de date si ai-ul*
 
 ### CGinfo Dashboard (aplicatia principala)
 
@@ -248,6 +249,21 @@ API_PORT = 5000         # Portul pe care ruleaza serverul Flask
 Baza de date SQLite (`Userdata/CGinfo.db`) este creata automat la prima rulare. Datele claselor si elevilor sunt stocate in `CGinfo/db_clase.json`, si pot fi gestionate exclusiv prin interfata grafica.
 
 ---
+
+## Mentiuni Info-Educatie
+
+Contributie Bușoi David:
+- Model AI
+- Frontend CGinfo_Dashboard
+- Logo CodeGuard
+
+Contributie Meștereagă Eric:
+- Similaritatea cu Jaccard
+- API
+- Backend CGinfo_Dashboard
+- Modulul OFFLINE
+
+Pentru acest proiect **NU** am folosit LLM-uri pentru a scire cod.
 
 ## Licenta
 
