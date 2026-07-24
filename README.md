@@ -263,7 +263,7 @@ Contributie Meștereagă Eric:
 - Backend CGinfo_Dashboard
 - Modulul OFFLINE
 
-Pentru acest proiect **NU** am folosit LLM-uri pentru a scire cod.
+Pentru acest proiect **NU** am folosit LLM-uri pentru a scrie cod.
 
 ## Licenta
 
