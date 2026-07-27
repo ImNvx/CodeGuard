@@ -156,16 +156,17 @@ def end_contest(strat_time : int, end_time : int, clasa : Clasa, probleme : list
     for elev in clasa.elevi:
         for problema in probleme:
             data = kn_get_submissions(elev, problema, strat_time, end_time)
+            data.reverse() # de la cea mai veche la cea mai noua
             for submission in data:
                 submission.contest_id = contest_id
                 weird_percent = 0
                 history = get_batch_for_ai(elev, CONTEXT_LENGTH)
                 history_text = []
                 for item in history:
-                    history_text.append(item.content)
+                    history_text.append(item.content.replace('\n', ' '))
 
                 if(len(history_text) != 0):
-                    submission.weird_percent = 100 - guard.checkSubmission(history_text, submission.content) # verifica solutia curenta
+                    submission.weird_percent = 100 - guard.checkSubmission(history_text, submission.content.replace('\n', ' ')) # verifica solutia curenta
 
                 submission.weird_percent = round(submission.weird_percent, 2)
 

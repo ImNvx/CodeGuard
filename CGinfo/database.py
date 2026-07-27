@@ -500,7 +500,7 @@ def get_batch_for_ai(elev: Elev, count: int = -1):
                 weird_percent,
                 similarity_percent
             FROM submissi
-            WHERE user_id = ? AND score == 100
+            WHERE user_id = ?
             ORDER BY time_stamp DESC
         """, (elev.id,))
     else:
@@ -516,7 +516,7 @@ def get_batch_for_ai(elev: Elev, count: int = -1):
                 weird_percent,
                 similarity_percent
             FROM submissi
-            WHERE user_id = ? AND score == 100
+            WHERE user_id = ?
             ORDER BY time_stamp DESC
             LIMIT ?
         """, (elev.id, count))
